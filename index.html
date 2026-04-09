@@ -23,7 +23,7 @@
     .podium-card.rank-2 { border-color: #C0C0C0; }
     .podium-card.rank-3 { border-color: #CD7F32; }
     .podium-medal { font-size: 28px; margin-bottom: 10px; line-height: 1; }
-    .medal-gold   { color: #FFD700; font-weight: 900; }
+    .medal-gold { color: #FFD700; font-weight: 900; }
     .medal-silver { color: #C0C0C0; font-weight: 900; }
     .medal-bronze { color: #CD7F32; font-weight: 900; }
     .podium-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 10px; display: block; border: 3px solid #2a2e3d; background: #2a2e3d; object-fit: cover; }
@@ -53,7 +53,6 @@
     .loading { text-align: center; padding: 80px 0; color: #64748b; }
     .spinner { width: 40px; height: 40px; border: 3px solid #2a2e3d; border-top-color: #ff6b00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .error-msg { text-align: center; padding: 40px; color: #ef4444; background: rgba(239,68,68,0.07); border-radius: 12px; }
     .info-banner { background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #94a3b8; }
     .info-banner a { color: #ff6b00; text-decoration: none; }
     .attribution { text-align: center; margin-top: 32px; font-size: 12px; color: #475569; }
@@ -95,41 +94,19 @@
     { steamId64: "76561199208386886", displayName: "Zven"  }
   ];
 
-  const LEETIFY = "https://api.cs-prod.leetify.com/api/profile/";
-
-  // Mehrere Proxies als Fallback
-  const PROXIES = [
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`
-  ];
-
-  async function fetchWithFallback(targetUrl) {
-    for (const proxy of PROXIES) {
-      try {
-        const res = await fetch(proxy(targetUrl), { signal: AbortSignal.timeout(8000) });
-        if (res.ok) {
-          const text = await res.text();
-          return JSON.parse(text);
-        }
-      } catch(e) {
-        continue;
-      }
-    }
-    throw new Error("Alle Proxies fehlgeschlagen");
-  }
-
   async function fetchPlayer(player) {
     try {
-      const data = await fetchWithFallback(LEETIFY + player.steamId64);
+      const res = await fetch(`/.netlify/functions/leetify?steamId=${player.steamId64}`);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
 
       const meta   = data.meta || data.playerSummary || data.profile || {};
       const games  = data.games || data.matchHistory || [];
       const recent = data.recentGames || data.recentMatches || games.slice(0, 10);
 
       const csRating =
-        meta.csRating      ?? meta.premierRating ??
-        meta.cs_rating     ?? data.csRating      ??
+        meta.csRating ?? meta.premierRating ??
+        meta.cs_rating ?? data.csRating ??
         data.premierRating ?? null;
 
       const avatar =
@@ -144,8 +121,8 @@
 
       const kdVals  = recent.map(g => g.kdRatio ?? g.kd ?? g.kd_ratio ?? null).filter(v => v !== null);
       const adrVals = recent.map(g => g.adr ?? g.averageDamagePerRound ?? null).filter(v => v !== null);
-      const avgKd   = kdVals.length  > 0 ? (kdVals.reduce((s,v)  => s+v, 0) / kdVals.length).toFixed(2)  : null;
-      const avgAdr  = adrVals.length > 0 ? (adrVals.reduce((s,v) => s+v, 0) / adrVals.length).toFixed(1) : null;
+      const avgKd   = kdVals.length  > 0 ? (kdVals.reduce((s,v) => s+v,0) / kdVals.length).toFixed(2)  : null;
+      const avgAdr  = adrVals.length > 0 ? (adrVals.reduce((s,v) => s+v,0) / adrVals.length).toFixed(1) : null;
 
       return {
         steamId64: player.steamId64, displayName: player.displayName,
@@ -158,8 +135,7 @@
         steamId64: player.steamId64, displayName: player.displayName,
         steamName: player.displayName, avatar: null,
         premierRating: null, kd: null, adr: null, winRate: null, totalGames: null,
-        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64,
-        error: true
+        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64, error: true
       };
     }
   }
@@ -197,8 +173,8 @@
     const container = document.getElementById("container");
     const top3 = players.slice(0, 3);
     const rankClass = ["r1","r2","r3"];
-
     const order = top3.length === 3 ? [1,0,2] : top3.map((_,i) => i);
+
     let podium = '<div class="podium">';
     order.forEach(i => {
       if (!top3[i]) return;
@@ -222,7 +198,7 @@
           <td><div class="rank-badge ${rc}">${idx+1}</div></td>
           <td>
             <div class="player-cell">
-              ${p.avatar ? `<img class="player-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>` : '<div class="player-avatar"></div>'}
+              ${p.avatar ? `<img class="player-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>` : '<div class="player-avatar"></div>'}
               <div>
                 <div class="player-name">${p.displayName}</div>
                 ${p.steamName !== p.displayName ? `<div class="player-steam">${p.steamName}</div>` : ""}
