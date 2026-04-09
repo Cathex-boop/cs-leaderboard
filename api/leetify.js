@@ -1,53 +1,52 @@
 module.exports = async function handler(req, res) {
-  const { steamId } = req.query;
+  const steamId = req.query.steamId;
+  if (!steamId) return res.status(400).json({ error: "steamId fehlt" });
 
-  if (!steamId) {
-    return res.status(400).json({ error: "steamId fehlt" });
+  const key = process.env.STEAM_API_KEY;
+
+  const summaryUrl = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + key + "&steamids=" + steamId;
+  const statsUrl   = "https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v2/?key=" + key + "&steamid=" + steamId + "&appid=730";
+
+  const [sRes, stRes] = await Promise.all([fetch(summaryUrl), fetch(statsUrl)]);
+  const sData  = await sRes.json();
+  const stData = await stRes.json();
+
+  const player = (sData.response && sData.response.players && sData.response.players[0]) || {};
+  const stats  = (stData.playerstats && stData.playerstats.stats) || [];
+
+  function g(name) {
+    var s = stats.find(function(x){ return x.name === name; });
+    return s ? s.value : null;
   }
 
-  const apiKey = process.env.STEAM_API_KEY;
+  var kills   = g("total_kills");
+  var deaths  = g("total_deaths");
+  var hs      = g("total_kills_headshot");
+  var wins    = g("total_wins_map") !== null ? g("total_wins_map") : g("total_matches_won");
+  var matches = g("total_matches_played");
+  var time    = g("total_time_played");
+  var rounds  = g("total_rounds_played");
+  var dmg     = g("total_damage_done");
 
-  try {
-    const summaryRes = await fetch(
-      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`
-    );
-    const summaryData = await summaryRes.json();
-    const player = (summaryData?.response?.players || [])[0] || {};
+  var kd       = (kills !== null && deaths !== null && deaths > 0) ? (kills / deaths).toFixed(2) : null;
+  var hsPct    = (kills !== null && hs !== null && kills > 0) ? ((hs / kills) * 100).toFixed(1) : null;
+  var winRate  = (matches !== null && wins !== null && matches > 0) ? ((wins / matches) * 100).toFixed(1) : null;
+  var adr      = (dmg !== null && rounds !== null && rounds > 0) ? (dmg / rounds).toFixed(1) : null;
+  var hours    = time !== null ? Math.round(time / 3600) : null;
 
-    const statsRes = await fetch(
-      `https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v2/?key=${apiKey}&steamid=${steamId}&appid=730`
-    );
-    const statsData = await statsRes.json();
-    const stats = statsData?.playerstats?.stats || [];
-
-    const getStat = (name) => {
-      const found = stats.find(s => s.name === name);
-      return found ? found.value : null;
-    };
-
-    const kills        = getStat("total_kills");
-    const deaths       = getStat("total_deaths");
-    const wins         = getStat("total_wins_map") ?? getStat("total_matches_won");
-    const headshots    = getStat("total_kills_headshot");
-    const timePlayed   = getStat("total_time_played");
-    const totalRounds  = getStat("total_rounds_played");
-    const totalMatches = getStat("total_matches_played");
-    const damage       = getStat("total_damage_done");
-
-    const kd = kills != null && deaths != null && deaths > 0
-      ? (kills / deaths).toFixed(2) : null;
-
-    const hsPercent = kills != null && headshots != null && kills > 0
-      ? ((headshots / kills) * 100).toFixed(1) : null;
-
-    const winRate = totalMatches != null && wins != null && totalMatches > 0
-      ? ((wins / totalMatches) * 100).toFixed(1) : null;
-
-    const adr = damage != null && totalRounds != null && totalRounds > 0
-      ? (damage / totalRounds).toFixed(1) : null;
-
-    const hoursPlayed = timePlayed != null
-      ? Math.round(timePlayed / 3600) : null;
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.set
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  return res.status(200).json({
+    steamId64:  steamId,
+    steamName:  player.personaname || null,
+    avatar:     player.avatarfull  || null,
+    profileUrl: player.profileurl  || null,
+    kd: kd,
+    hsPercent: hsPct,
+    winRate: winRate,
+    adr: adr,
+    kills: kills,
+    wins: wins,
+    hoursPlayed: hours,
+    totalMatches: matches
+  });
+};
