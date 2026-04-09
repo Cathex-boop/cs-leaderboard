@@ -73,7 +73,6 @@
     <button id="refreshBtn" onclick="loadLeaderboard()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
 </header>
-
 <main>
   <div class="updated-info" id="updatedAt"></div>
   <div class="info-banner">
@@ -86,7 +85,6 @@
   </div>
   <div class="attribution">Data provided by <a href="https://leetify.com" target="_blank">Leetify</a></div>
 </main>
-
 <script>
   const PLAYERS = [
     { steamId64: "76561198212183875", displayName: "Lehon" },
@@ -96,7 +94,7 @@
 
   async function fetchPlayer(player) {
     try {
-      const res = await fetch(`/.netlify/functions/leetify?steamId=${player.steamId64}`);
+      const res = await fetch(`/api/leetify?steamId=${player.steamId64}`);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
 
@@ -109,53 +107,39 @@
         meta.cs_rating ?? data.csRating ??
         data.premierRating ?? null;
 
-      const avatar =
-        meta.avatarUrl || meta.avatar || meta.avatarFull ||
-        meta.profilePicture || null;
-
-      const steamName =
-        meta.name || meta.steamName || meta.personaname || player.displayName;
+      const avatar = meta.avatarUrl || meta.avatar || meta.avatarFull || null;
+      const steamName = meta.name || meta.steamName || meta.personaname || player.displayName;
 
       const wins    = games.filter(g => g.won === true || g.result === "win").length;
       const winRate = games.length > 0 ? ((wins / games.length) * 100).toFixed(1) : null;
 
-      const kdVals  = recent.map(g => g.kdRatio ?? g.kd ?? g.kd_ratio ?? null).filter(v => v !== null);
+      const kdVals  = recent.map(g => g.kdRatio ?? g.kd ?? null).filter(v => v !== null);
       const adrVals = recent.map(g => g.adr ?? g.averageDamagePerRound ?? null).filter(v => v !== null);
-      const avgKd   = kdVals.length  > 0 ? (kdVals.reduce((s,v) => s+v,0) / kdVals.length).toFixed(2)  : null;
+      const avgKd   = kdVals.length  > 0 ? (kdVals.reduce((s,v)  => s+v,0) / kdVals.length).toFixed(2)  : null;
       const avgAdr  = adrVals.length > 0 ? (adrVals.reduce((s,v) => s+v,0) / adrVals.length).toFixed(1) : null;
 
-      return {
-        steamId64: player.steamId64, displayName: player.displayName,
+      return { steamId64: player.steamId64, displayName: player.displayName,
         steamName, avatar, premierRating: csRating,
         kd: avgKd, adr: avgAdr, winRate, totalGames: games.length,
-        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64
-      };
+        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64 };
     } catch(e) {
-      return {
-        steamId64: player.steamId64, displayName: player.displayName,
-        steamName: player.displayName, avatar: null,
-        premierRating: null, kd: null, adr: null, winRate: null, totalGames: null,
-        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64, error: true
-      };
+      return { steamId64: player.steamId64, displayName: player.displayName,
+        steamName: player.displayName, avatar: null, premierRating: null,
+        kd: null, adr: null, winRate: null, totalGames: null,
+        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64, error: true };
     }
   }
 
   async function loadLeaderboard() {
     const btn = document.getElementById("refreshBtn");
     const container = document.getElementById("container");
-    btn.disabled = true;
-    btn.textContent = "Ladt...";
+    btn.disabled = true; btn.textContent = "Ladt...";
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Daten von Leetify...</p></div>';
-
     const results = await Promise.all(PLAYERS.map(fetchPlayer));
     const sorted  = results.sort((a,b) => (b.premierRating||0) - (a.premierRating||0));
-
-    document.getElementById("updatedAt").textContent =
-      "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
-
+    document.getElementById("updatedAt").textContent = "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
     render(sorted);
-    btn.disabled  = false;
-    btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
+    btn.disabled = false; btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
   }
 
   function val(v, suffix) {
@@ -163,66 +147,46 @@
     return v + (suffix || "");
   }
 
-  const MEDALS = [
-    '<span class="medal-gold">&#9312;</span>',
-    '<span class="medal-silver">&#9313;</span>',
-    '<span class="medal-bronze">&#9314;</span>'
-  ];
+  const MEDALS = ['<span class="medal-gold">&#9312;</span>','<span class="medal-silver">&#9313;</span>','<span class="medal-bronze">&#9314;</span>'];
 
   function render(players) {
     const container = document.getElementById("container");
-    const top3 = players.slice(0, 3);
-    const rankClass = ["r1","r2","r3"];
+    const top3 = players.slice(0,3);
     const order = top3.length === 3 ? [1,0,2] : top3.map((_,i) => i);
-
     let podium = '<div class="podium">';
     order.forEach(i => {
       if (!top3[i]) return;
-      const p = top3[i]; const r = i + 1;
-      podium += `
-        <div class="podium-card rank-${r}">
-          <div class="podium-medal">${MEDALS[i] || "#"+r}</div>
-          ${p.avatar ? `<img class="podium-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>` : '<div class="podium-avatar"></div>'}
-          <div class="podium-name">${p.displayName}</div>
-          <div class="podium-rating">${p.premierRating != null ? p.premierRating.toLocaleString("de-DE") : "&#8212;"}</div>
-          <div class="podium-rating-label">CS RATING</div>
-        </div>`;
+      const p = top3[i]; const r = i+1;
+      podium += `<div class="podium-card rank-${r}">
+        <div class="podium-medal">${MEDALS[i]||"#"+r}</div>
+        ${p.avatar?`<img class="podium-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>`
+          :'<div class="podium-avatar"></div>'}
+        <div class="podium-name">${p.displayName}</div>
+        <div class="podium-rating">${p.premierRating!=null?p.premierRating.toLocaleString("de-DE"):"&#8212;"}</div>
+        <div class="podium-rating-label">CS RATING</div></div>`;
     });
     podium += '</div>';
-
     let rows = "";
-    players.forEach((p, idx) => {
-      const rc = rankClass[idx] || "rn";
-      rows += `
-        <tr>
-          <td><div class="rank-badge ${rc}">${idx+1}</div></td>
-          <td>
-            <div class="player-cell">
-              ${p.avatar ? `<img class="player-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>` : '<div class="player-avatar"></div>'}
-              <div>
-                <div class="player-name">${p.displayName}</div>
-                ${p.steamName !== p.displayName ? `<div class="player-steam">${p.steamName}</div>` : ""}
-              </div>
-            </div>
-          </td>
-          <td>${p.premierRating != null ? `<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>` : '<span class="null-val">&#8212;</span>'}</td>
-          <td>${val(p.kd)}</td>
-          <td>${val(p.adr)}</td>
-          <td>${val(p.winRate,"%")}</td>
-          <td><a class="leetify-link" href="${p.leetifyUrl}" target="_blank">Leetify &#8599;</a></td>
-        </tr>`;
+    players.forEach((p,idx) => {
+      const rc = ["r1","r2","r3"][idx]||"rn";
+      rows += `<tr>
+        <td><div class="rank-badge ${rc}">${idx+1}</div></td>
+        <td><div class="player-cell">
+          ${p.avatar?`<img class="player-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>`
+            :'<div class="player-avatar"></div>'}
+          <div><div class="player-name">${p.displayName}</div>
+          ${p.steamName!==p.displayName?`<div class="player-steam">${p.steamName}</div>`:""}</div>
+        </div></td>
+        <td>${p.premierRating!=null?`<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>`
+          :'<span class="null-val">&#8212;</span>'}</td>
+        <td>${val(p.kd)}</td><td>${val(p.adr)}</td><td>${val(p.winRate,"%")}</td>
+        <td><a class="leetify-link" href="${p.leetifyUrl}" target="_blank">Leetify &#8599;</a></td></tr>`;
     });
-
-    container.innerHTML = (top3.length > 0 ? podium : "") + `
-      <div class="table-wrap">
-        <table class="leaderboard-table">
-          <thead><tr>
-            <th>#</th><th>Spieler</th><th>Premier Rating</th>
-            <th>K/D</th><th>ADR</th><th>Win Rate</th><th></th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
+    container.innerHTML = (top3.length>0?podium:"") + `
+      <div class="table-wrap"><table class="leaderboard-table">
+        <thead><tr><th>#</th><th>Spieler</th><th>Premier Rating</th>
+          <th>K/D</th><th>ADR</th><th>Win Rate</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
   }
 
   loadLeaderboard();
