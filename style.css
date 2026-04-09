@@ -1,1 +1,96 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
+body {
+  background: #0d0f14;
+  color: #e2e8f0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  background: #13161e;
+  border-bottom: 2px solid #ff6b00;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.header-inner {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo { display: flex; align-items: baseline; gap: 8px; }
+.logo-cs { color: #ff6b00; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.logo-lb { color: #94a3b8; font-size: 13px; font-weight: 600; letter-spacing: 3px; }
+
+#refreshBtn {
+  background: #ff6b00;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.2s;
+}
+#refreshBtn:hover { background: #e05a00; }
+#refreshBtn:disabled { background: #444; cursor: not-allowed; }
+
+main {
+  max-width: 900px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+.updated-info {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+/* Podium Top 3 */
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.podium-card {
+  background: #1a1e2a;
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  flex: 1;
+  max-width: 200px;
+  border: 2px solid transparent;
+  position: relative;
+}
+.podium-card.rank-1 { border-color: #FFD700; transform: translateY(-12px); }
+.podium-card.rank-2 { border-color: #C0C0C0; }
+.podium-card.rank-3 { border-color: #CD7F32; }
+
+.podium-rank {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+.rank-1 .podium-rank { color: #FFD700; }
+.rank-2 .podium-rank { color: #C0C0C0; }
+.rank-3 .podium-rank { color: #CD7F32; }
+
+.podium-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
