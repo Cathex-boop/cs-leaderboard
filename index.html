@@ -66,7 +66,6 @@
       text-align: right;
     }
 
-    /* Podium */
     .podium {
       display: flex;
       justify-content: center;
@@ -88,7 +87,15 @@
     .podium-card.rank-2 { border-color: #C0C0C0; }
     .podium-card.rank-3 { border-color: #CD7F32; }
 
-    .podium-medal { font-size: 32px; margin-bottom: 10px; }
+    .podium-medal {
+      font-size: 28px;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    .medal-gold   { color: #FFD700; font-weight: 900; }
+    .medal-silver { color: #C0C0C0; font-weight: 900; }
+    .medal-bronze { color: #CD7F32; font-weight: 900; }
+
     .podium-avatar {
       width: 72px; height: 72px;
       border-radius: 50%;
@@ -102,7 +109,6 @@
     .podium-rating { font-size: 24px; font-weight: 800; color: #ff6b00; }
     .podium-rating-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
 
-    /* Table */
     .table-wrap { overflow-x: auto; border-radius: 12px; }
     .leaderboard-table {
       width: 100%;
@@ -192,6 +198,18 @@
       border-radius: 12px;
     }
 
+    .info-banner {
+      background: rgba(255,107,0,0.08);
+      border: 1px solid rgba(255,107,0,0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .info-banner a { color: #ff6b00; text-decoration: none; }
+    .info-banner a:hover { text-decoration: underline; }
+
     .attribution {
       text-align: center;
       margin-top: 32px;
@@ -216,19 +234,27 @@
       <span class="logo-lb">LEADERBOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadLeaderboard()">
-      &#x21BB; Aktualisieren
+      &#x21BB;&nbsp;Aktualisieren
     </button>
   </div>
 </header>
 
 <main>
   <div class="updated-info" id="updatedAt"></div>
+
+  <div class="info-banner">
+    &#9432;&nbsp; Damit Werte angezeigt werden, muss jeder Spieler einmalig bei
+    <a href="https://leetify.com" target="_blank">leetify.com</a> mit Steam einloggen
+    und sein Profil auf <strong>&#246;ffentlich</strong> stellen.
+  </div>
+
   <div id="container">
     <div class="loading">
       <div class="spinner"></div>
       <p>Lade Daten von Leetify...</p>
     </div>
   </div>
+
   <div class="attribution">
     Data provided by <a href="https://leetify.com" target="_blank">Leetify</a>
   </div>
@@ -241,7 +267,7 @@
     { steamId64: "76561199208386886", displayName: "Zven"  }
   ];
 
-  const PROXY = "https://corsproxy.io/?url=";
+  const PROXY   = "https://corsproxy.io/?url=";
   const LEETIFY = "https://api.cs-prod.leetify.com/api/profile/";
 
   async function fetchPlayer(player) {
@@ -251,46 +277,72 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
 
-      const meta = data.meta || {};
-      const games = data.games || [];
-      const recent = data.recentGames || [];
+      // Flexibles Mapping — deckt alte & neue Leetify-API-Struktur ab
+      const meta   = data.meta || data.playerSummary || data.profile || {};
+      const games  = data.games || data.matchHistory || [];
+      const recent = data.recentGames || data.recentMatches || games.slice(0, 10);
 
-      const wins = games.filter(g => g.won === true).length;
-      const winRate = games.length > 0 ? ((wins / games.length) * 100).toFixed(1) : null;
-      const avgKd  = recent.length > 0 ? (recent.reduce((s,g) => s + (g.kdRatio||0), 0) / recent.length).toFixed(2) : null;
-      const avgAdr = recent.length > 0 ? (recent.reduce((s,g) => s + (g.adr||0), 0) / recent.length).toFixed(1) : null;
+      const csRating =
+        meta.csRating       ??
+        meta.premierRating  ??
+        meta.cs_rating      ??
+        data.csRating       ??
+        data.premierRating  ??
+        null;
+
+      const avatar =
+        meta.avatarUrl   ||
+        meta.avatar      ||
+        meta.avatarFull  ||
+        meta.profilePicture ||
+        null;
+
+      const steamName =
+        meta.name        ||
+        meta.steamName   ||
+        meta.personaname ||
+        player.displayName;
+
+      const wins      = games.filter(g => g.won === true || g.result === "win").length;
+      const winRate   = games.length > 0 ? ((wins / games.length) * 100).toFixed(1) : null;
+
+      const kdValues  = recent.map(g => g.kdRatio ?? g.kd ?? g.kd_ratio ?? null).filter(v => v !== null);
+      const adrValues = recent.map(g => g.adr ?? g.averageDamagePerRound ?? null).filter(v => v !== null);
+
+      const avgKd  = kdValues.length  > 0 ? (kdValues.reduce((s,v)  => s+v, 0) / kdValues.length).toFixed(2)  : null;
+      const avgAdr = adrValues.length > 0 ? (adrValues.reduce((s,v) => s+v, 0) / adrValues.length).toFixed(1) : null;
 
       return {
-        steamId64:    player.steamId64,
-        displayName:  player.displayName,
-        steamName:    meta.name || player.displayName,
-        avatar:       meta.avatarUrl || null,
-        premierRating: meta.csRating || null,
-        kd:           avgKd,
-        adr:          avgAdr,
-        winRate:      winRate,
-        totalGames:   games.length,
-        leetifyUrl:   "https://leetify.com/app/profile/" + player.steamId64
+        steamId64:     player.steamId64,
+        displayName:   player.displayName,
+        steamName,
+        avatar,
+        premierRating: csRating,
+        kd:            avgKd,
+        adr:           avgAdr,
+        winRate,
+        totalGames:    games.length,
+        leetifyUrl:    "https://leetify.com/app/profile/" + player.steamId64
       };
     } catch(e) {
       return {
-        steamId64: player.steamId64,
-        displayName: player.displayName,
-        steamName: player.displayName,
-        avatar: null,
+        steamId64:     player.steamId64,
+        displayName:   player.displayName,
+        steamName:     player.displayName,
+        avatar:        null,
         premierRating: null,
         kd: null, adr: null, winRate: null, totalGames: null,
-        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64,
-        error: true
+        leetifyUrl:    "https://leetify.com/app/profile/" + player.steamId64,
+        error:         true
       };
     }
   }
 
   async function loadLeaderboard() {
-    const btn = document.getElementById("refreshBtn");
+    const btn       = document.getElementById("refreshBtn");
     const container = document.getElementById("container");
-    btn.disabled = true;
-    btn.textContent = "Lรคdt...";
+    btn.disabled    = true;
+    btn.textContent = "Ladt...";
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Daten von Leetify...</p></div>';
 
     const results = await Promise.all(PLAYERS.map(fetchPlayer));
@@ -300,40 +352,47 @@
       "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
 
     render(sorted);
-    btn.disabled = false;
-    btn.textContent = "โ�ป Aktualisieren";
+    btn.disabled    = false;
+    btn.innerHTML   = "&#x21BB;&nbsp;Aktualisieren";
   }
 
   function val(v, suffix) {
-    if (v == null) return '<span class="null-val">โ€”</span>';
-    return v + (suffix||"");
+    if (v == null) return '<span class="null-val">&#8212;</span>';
+    return v + (suffix || "");
   }
 
-  function render(players) {
-    const container = document.getElementById("container");
-    const medals = ["๐�ฅ�","๐�ฅ�","๐�ฅ�"];
-    const rankClass = ["r1","r2","r3"];
+  const MEDALS = [
+    '<span class="medal-gold">&#9312;</span>',
+    '<span class="medal-silver">&#9313;</span>',
+    '<span class="medal-bronze">&#9314;</span>'
+  ];
 
-    // Podium (top 3, order: 2nd - 1st - 3rd)
-    const top3 = players.slice(0,3);
-    const order = top3.length === 3 ? [1,0,2] : top3.map((_,i)=>i);
-    let podium = '<div class="podium">';
+  function render(players) {
+    const container  = document.getElementById("container");
+    const top3       = players.slice(0, 3);
+    const rankClass  = ["r1","r2","r3"];
+
+    // Podium: Reihenfolge 2. - 1. - 3.
+    const order = top3.length === 3 ? [1,0,2] : top3.map((_,i) => i);
+    let podium  = '<div class="podium">';
     order.forEach(i => {
       if (!top3[i]) return;
       const p = top3[i];
       const r = i + 1;
+      const borderClass = ["rank-1","rank-2","rank-3"][i];
       podium += `
-        <div class="podium-card rank-${r}">
-          <div class="podium-medal">${medals[i]||"#"+r}</div>
-          ${p.avatar ? `<img class="podium-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>` : '<div class="podium-avatar"></div>'}
+        <div class="podium-card ${borderClass}">
+          <div class="podium-medal">${MEDALS[i] || "#" + r}</div>
+          ${p.avatar
+            ? `<img class="podium-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>`
+            : '<div class="podium-avatar"></div>'}
           <div class="podium-name">${p.displayName}</div>
-          <div class="podium-rating">${p.premierRating != null ? p.premierRating.toLocaleString("de-DE") : "โ€”"}</div>
+          <div class="podium-rating">${p.premierRating != null ? p.premierRating.toLocaleString("de-DE") : "&#8212;"}</div>
           <div class="podium-rating-label">CS RATING</div>
         </div>`;
     });
     podium += '</div>';
 
-    // Table
     let rows = "";
     players.forEach((p, idx) => {
       const rc = rankClass[idx] || "rn";
@@ -342,18 +401,22 @@
           <td><div class="rank-badge ${rc}">${idx+1}</div></td>
           <td>
             <div class="player-cell">
-              ${p.avatar ? `<img class="player-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>` : '<div class="player-avatar"></div>'}
+              ${p.avatar
+                ? `<img class="player-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>`
+                : '<div class="player-avatar"></div>'}
               <div>
                 <div class="player-name">${p.displayName}</div>
                 ${p.steamName !== p.displayName ? `<div class="player-steam">${p.steamName}</div>` : ""}
               </div>
             </div>
           </td>
-          <td>${p.premierRating != null ? `<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>` : '<span class="null-val">โ€”</span>'}</td>
+          <td>${p.premierRating != null
+            ? `<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>`
+            : '<span class="null-val">&#8212;</span>'}</td>
           <td>${val(p.kd)}</td>
           <td>${val(p.adr)}</td>
           <td>${val(p.winRate, "%")}</td>
-          <td><a class="leetify-link" href="${p.leetifyUrl}" target="_blank">Leetify โ�—</a></td>
+          <td><a class="leetify-link" href="${p.leetifyUrl}" target="_blank">Leetify &#8599;</a></td>
         </tr>`;
     });
 
