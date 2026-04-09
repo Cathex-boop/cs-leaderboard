@@ -35,14 +35,19 @@
     .podium-val { font-size: 22px; font-weight: 800; color: #ff6b00; }
     .podium-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
     .table-wrap { overflow-x: auto; border-radius: 12px; }
-    .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 720px; }
+    .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 760px; }
     .leaderboard-table thead tr { background: #1a1e2a; border-bottom: 1px solid #2a2e3d; }
-    .leaderboard-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
     .leaderboard-table th:hover { color: #ff6b00; }
     .leaderboard-table th.sorted { color: #ff6b00; }
     .leaderboard-table th .arrow { margin-left: 4px; opacity: 0.5; }
     .leaderboard-table th.sorted .arrow { opacity: 1; }
-    .leaderboard-table td { padding: 14px 16px; border-bottom: 1px solid #1a1e2a; font-size: 14px; }
+    .leaderboard-table td { padding: 14px 10px; border-bottom: 1px solid #1a1e2a; font-size: 14px; }
+    .leaderboard-table th { padding: 12px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
+    .col-rank   { width: 44px; }
+    .col-player { width: 180px; }
+    .col-stat   { width: 80px; }
+    .col-link   { width: 75px; text-align: right !important; }
+    .leaderboard-table td.col-link { text-align: right; }
     .leaderboard-table tbody tr:last-child td { border-bottom: none; }
     .leaderboard-table tbody tr:hover { background: #1a1e2a; }
     .player-cell { display: flex; align-items: center; gap: 12px; }
@@ -214,18 +219,20 @@
         '<td>' + v(p.winRate,   "%") + '</td>' +
         '<td>' + v(p.kills != null ? Number(p.kills).toLocaleString("de-DE") : null) + '</td>' +
         '<td>' + v(p.adr) + '</td>' +
-        '<td>' + (p.profileUrl ? '<a class="steam-link" href="' + p.profileUrl + '" target="_blank">Steam &#8599;</a>' : '') + '</td>' +
+        '<td class="col-link">' + (p.profileUrl ? '<a class="steam-link" href="' + p.profileUrl + '" target="_blank">Steam &#8599;</a>' : '') + '</td>' +
         '</tr>';
     });
 
     container.innerHTML = (top3.length > 0 ? podium : "") +
-      '<div class="table-wrap"><table class="leaderboard-table"><thead><tr>' +
+      '<div class="table-wrap"><table class="leaderboard-table"><colgroup><col class="col-rank"><col class="col-player">' +
+      SORT_OPTIONS.map(function(){ return '<col class="col-stat">'; }).join("") +
+      '<col class="col-link"></colgroup><thead><tr>' +
       '<th>#</th><th>Spieler</th>' +
       SORT_OPTIONS.map(function(opt) {
         var arrow = currentSort === opt.key ? " &#9660;" : " &#8597;";
         return '<th class="' + (currentSort === opt.key ? "sorted" : "") + '" onclick="setSort(\'' + opt.key + '\')">' + opt.label + '<span class="arrow">' + arrow + '</span></th>';
       }).join("") +
-      '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '<th class="col-link"></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   loadLeaderboard();
