@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CS2 GoonerGang</title>
+  <title>CS2 Premier Leaderboard</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -12,31 +12,39 @@
     .logo { display: flex; align-items: baseline; gap: 8px; }
     .logo-cs { color: #ff6b00; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
     .logo-lb { color: #94a3b8; font-size: 13px; font-weight: 600; letter-spacing: 3px; }
-    #refreshBtn { background: #ff6b00; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background 0.2s; }
+    #refreshBtn { background: #ff6b00; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     #refreshBtn:hover { background: #e05a00; }
     #refreshBtn:disabled { background: #333; cursor: not-allowed; }
     main { max-width: 960px; margin: 32px auto; padding: 0 16px; }
     .updated-info { font-size: 12px; color: #64748b; margin-bottom: 16px; text-align: right; }
+    .sort-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .sort-btn { background: #1a1e2a; border: 1px solid #2a2e3d; color: #94a3b8; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+    .sort-btn:hover { border-color: #ff6b00; color: #ff6b00; }
+    .sort-btn.active { background: #ff6b00; border-color: #ff6b00; color: #fff; }
     .podium { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 36px; }
     .podium-card { background: #1a1e2a; border-radius: 12px; padding: 24px 16px; text-align: center; flex: 1; max-width: 220px; border: 2px solid transparent; }
     .podium-card.rank-1 { border-color: #FFD700; transform: translateY(-14px); }
     .podium-card.rank-2 { border-color: #C0C0C0; }
     .podium-card.rank-3 { border-color: #CD7F32; }
-    .podium-medal { margin-bottom: 10px; line-height: 1; }
+    .podium-medal { margin-bottom: 10px; }
     .medal-gold { color: #FFD700; font-weight: 900; font-size: 26px; }
     .medal-silver { color: #C0C0C0; font-weight: 900; font-size: 26px; }
     .medal-bronze { color: #CD7F32; font-weight: 900; font-size: 26px; }
     .podium-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 10px; display: block; border: 3px solid #2a2e3d; background: #2a2e3d; object-fit: cover; }
     .podium-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #f1f5f9; }
-    .podium-kd { font-size: 22px; font-weight: 800; color: #ff6b00; }
-    .podium-kd-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
+    .podium-val { font-size: 22px; font-weight: 800; color: #ff6b00; }
+    .podium-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
     .table-wrap { overflow-x: auto; border-radius: 12px; }
     .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 620px; }
     .leaderboard-table thead tr { background: #1a1e2a; border-bottom: 1px solid #2a2e3d; }
-    .leaderboard-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
+    .leaderboard-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
+    .leaderboard-table th:hover { color: #ff6b00; }
+    .leaderboard-table th.sorted { color: #ff6b00; }
+    .leaderboard-table th .arrow { margin-left: 4px; opacity: 0.5; }
+    .leaderboard-table th.sorted .arrow { opacity: 1; }
     .leaderboard-table td { padding: 14px 16px; border-bottom: 1px solid #1a1e2a; font-size: 14px; }
     .leaderboard-table tbody tr:last-child td { border-bottom: none; }
-    .leaderboard-table tbody tr:hover { background: #1a1e2a; transition: background 0.15s; }
+    .leaderboard-table tbody tr:hover { background: #1a1e2a; }
     .player-cell { display: flex; align-items: center; gap: 12px; }
     .player-avatar { width: 38px; height: 38px; border-radius: 6px; background: #2a2e3d; object-fit: cover; }
     .player-name { font-weight: 600; color: #f1f5f9; }
@@ -46,7 +54,7 @@
     .r2 { background: rgba(192,192,192,0.15); color: #C0C0C0; }
     .r3 { background: rgba(205,127,50,0.15); color: #CD7F32; }
     .rn { background: #1a1e2a; color: #64748b; }
-    .kd-val { font-weight: 800; font-size: 15px; color: #ff6b00; }
+    .hi-val { font-weight: 800; font-size: 15px; color: #ff6b00; }
     .null-val { color: #2a2e3d; }
     .steam-link { color: #94a3b8; text-decoration: none; font-size: 12px; padding: 4px 10px; border: 1px solid #2a2e3d; border-radius: 4px; transition: all 0.2s; white-space: nowrap; }
     .steam-link:hover { border-color: #ff6b00; color: #ff6b00; }
@@ -67,7 +75,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">GOON-BOARD</span>
+      <span class="logo-lb">LEADERBOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadLeaderboard()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
@@ -75,9 +83,10 @@
 <main>
   <div class="updated-info" id="updatedAt"></div>
   <div class="info-banner">
-    &#9432;&nbsp; Das Ranking basiert auf K/D Ratio. Steam-Profile m&#252;ssen auf
-    <strong>&#246;ffentlich</strong> gestellt sein damit Statistiken geladen werden k&#246;nnen.
+    &#9432;&nbsp; Steam-Profile m&#252;ssen auf <strong>&#246;ffentlich</strong> gestellt sein.
+    Statistiken beziehen sich auf die gesamte CS2/CS:GO Karriere.
   </div>
+  <div class="sort-bar" id="sortBar"></div>
   <div id="container">
     <div class="loading"><div class="spinner"></div><p>Lade Steam-Daten...</p></div>
   </div>
@@ -95,103 +104,126 @@
     { steamId64: "76561199208386886", displayName: "Zven"  }
   ];
 
+  const SORT_OPTIONS = [
+    { key: "kd",           label: "K/D Ratio",  suffix: "",  decimals: 2 },
+    { key: "hsPercent",    label: "HS %",        suffix: "%", decimals: 1 },
+    { key: "winRate",      label: "Win Rate",    suffix: "%", decimals: 1 },
+    { key: "kills",        label: "Kills",       suffix: "",  decimals: 0 },
+    { key: "wins",         label: "Wins",        suffix: "",  decimals: 0 },
+    { key: "adr",          label: "ADR",         suffix: "",  decimals: 1 }
+  ];
+
+  let currentSort = "kd";
+  let allPlayers  = [];
+
   async function fetchPlayer(player) {
     try {
-      const res = await fetch(`/api/leetify?steamId=${player.steamId64}`);
+      const res  = await fetch("/api/leetify?steamId=" + player.steamId64);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
-      return { ...data, displayName: player.displayName };
+      return Object.assign({}, data, { displayName: player.displayName });
     } catch(e) {
-      return {
-        steamId64: player.steamId64, displayName: player.displayName,
-        steamName: player.displayName, avatar: null,
+      return { steamId64: player.steamId64, displayName: player.displayName,
+        steamName: player.displayName, avatar: null, profileUrl: null,
         kd: null, hsPercent: null, winRate: null, adr: null,
-        kills: null, wins: null, hoursPlayed: null, totalMatches: null,
-        profileUrl: null, error: true
-      };
+        kills: null, wins: null, hoursPlayed: null, totalMatches: null, error: true };
     }
   }
 
   async function loadLeaderboard() {
-    const btn = document.getElementById("refreshBtn");
-    const container = document.getElementById("container");
+    var btn = document.getElementById("refreshBtn");
+    var container = document.getElementById("container");
     btn.disabled = true; btn.textContent = "Ladt...";
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Steam-Daten...</p></div>';
-
-    const results = await Promise.all(PLAYERS.map(fetchPlayer));
-    const sorted  = results.sort((a,b) => (parseFloat(b.kd)||0) - (parseFloat(a.kd)||0));
-
+    allPlayers = await Promise.all(PLAYERS.map(fetchPlayer));
     document.getElementById("updatedAt").textContent =
       "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
-
-    render(sorted);
+    buildSortBar();
+    renderSorted();
     btn.disabled = false; btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
   }
 
-  function val(v, suffix) {
-    if (v == null) return '<span class="null-val">&#8212;</span>';
-    return v + (suffix || "");
+  function buildSortBar() {
+    var bar = document.getElementById("sortBar");
+    bar.innerHTML = SORT_OPTIONS.map(function(opt) {
+      return '<button class="sort-btn' + (opt.key === currentSort ? ' active' : '') +
+        '" onclick="setSort(\'' + opt.key + '\')">' + opt.label + '</button>';
+    }).join("");
   }
 
-  const MEDALS = [
+  function setSort(key) {
+    currentSort = key;
+    buildSortBar();
+    renderSorted();
+  }
+
+  function renderSorted() {
+    var sorted = allPlayers.slice().sort(function(a, b) {
+      return (parseFloat(b[currentSort]) || 0) - (parseFloat(a[currentSort]) || 0);
+    });
+    var opt = SORT_OPTIONS.find(function(o){ return o.key === currentSort; });
+    render(sorted, opt);
+  }
+
+  function v(val, suffix) {
+    if (val == null) return '<span class="null-val">&#8212;</span>';
+    var n = parseFloat(val);
+    return (isNaN(n) ? val : val) + (suffix || "");
+  }
+
+  var MEDALS = [
     '<span class="medal-gold">&#9312;</span>',
     '<span class="medal-silver">&#9313;</span>',
     '<span class="medal-bronze">&#9314;</span>'
   ];
 
-  function render(players) {
-    const container = document.getElementById("container");
-    const top3 = players.slice(0,3);
-    const order = top3.length === 3 ? [1,0,2] : top3.map((_,i) => i);
+  function render(players, sortOpt) {
+    var container = document.getElementById("container");
+    var top3  = players.slice(0, 3);
+    var order = top3.length === 3 ? [1, 0, 2] : top3.map(function(_, i){ return i; });
 
-    let podium = '<div class="podium">';
-    order.forEach(i => {
+    var podium = '<div class="podium">';
+    order.forEach(function(i) {
       if (!top3[i]) return;
-      const p = top3[i]; const r = i+1;
-      podium += `<div class="podium-card rank-${r}">
-        <div class="podium-medal">${MEDALS[i]||"#"+r}</div>
-        ${p.avatar?`<img class="podium-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>`
-          :'<div class="podium-avatar"></div>'}
-        <div class="podium-name">${p.displayName}</div>
-        <div class="podium-kd">${p.kd ?? "&#8212;"}</div>
-        <div class="podium-kd-label">K/D RATIO</div>
-      </div>`;
+      var p = top3[i]; var r = i + 1;
+      var dispVal = p[sortOpt.key] != null ? p[sortOpt.key] + sortOpt.suffix : "&#8212;";
+      podium += '<div class="podium-card rank-' + r + '">' +
+        '<div class="podium-medal">' + (MEDALS[i] || "#" + r) + '</div>' +
+        (p.avatar ? '<img class="podium-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="podium-avatar"></div>') +
+        '<div class="podium-name">' + p.displayName + '</div>' +
+        '<div class="podium-val">' + dispVal + '</div>' +
+        '<div class="podium-label">' + sortOpt.label.toUpperCase() + '</div>' +
+        '</div>';
     });
     podium += '</div>';
 
-    let rows = "";
-    players.forEach((p, idx) => {
-      const rc = ["r1","r2","r3"][idx] || "rn";
-      rows += `<tr>
-        <td><div class="rank-badge ${rc}">${idx+1}</div></td>
-        <td><div class="player-cell">
-          ${p.avatar?`<img class="player-avatar" src="${p.avatar}" onerror="this.style.visibility='hidden'"/>`
-            :'<div class="player-avatar"></div>'}
-          <div>
-            <div class="player-name">${p.displayName}</div>
-            ${p.steamName && p.steamName !== p.displayName
-              ? `<div class="player-steam">${p.steamName}</div>` : ""}
-          </div>
-        </div></td>
-        <td>${p.kd != null ? `<span class="kd-val">${p.kd}</span>` : '<span class="null-val">&#8212;</span>'}</td>
-        <td>${val(p.hsPercent, "%")}</td>
-        <td>${val(p.winRate, "%")}</td>
-        <td>${val(p.kills != null ? p.kills.toLocaleString("de-DE") : null)}</td>
-        <td>${val(p.hoursPlayed != null ? p.hoursPlayed + "h" : null)}</td>
-        <td>${p.profileUrl
-          ? `<a class="steam-link" href="${p.profileUrl}" target="_blank">Steam &#8599;</a>`
-          : ""}</td>
-      </tr>`;
+    var rows = "";
+    players.forEach(function(p, idx) {
+      var rc = ["r1","r2","r3"][idx] || "rn";
+      rows += '<tr>' +
+        '<td><div class="rank-badge ' + rc + '">' + (idx+1) + '</div></td>' +
+        '<td><div class="player-cell">' +
+          (p.avatar ? '<img class="player-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="player-avatar"></div>') +
+          '<div><div class="player-name">' + p.displayName + '</div>' +
+          (p.steamName && p.steamName !== p.displayName ? '<div class="player-steam">' + p.steamName + '</div>' : '') +
+          '</div></div></td>' +
+        '<td>' + (p.kd       != null ? '<span class="hi-val">' + p.kd       + '</span>' : '<span class="null-val">&#8212;</span>') + '</td>' +
+        '<td>' + v(p.hsPercent, "%") + '</td>' +
+        '<td>' + v(p.winRate,   "%") + '</td>' +
+        '<td>' + v(p.kills != null ? Number(p.kills).toLocaleString("de-DE") : null) + '</td>' +
+        '<td>' + v(p.adr) + '</td>' +
+        '<td>' + (p.profileUrl ? '<a class="steam-link" href="' + p.profileUrl + '" target="_blank">Steam &#8599;</a>' : '') + '</td>' +
+        '</tr>';
     });
 
-    container.innerHTML = (top3.length > 0 ? podium : "") + `
-      <div class="table-wrap"><table class="leaderboard-table">
-        <thead><tr>
-          <th>#</th><th>Spieler</th><th>K/D</th>
-          <th>HS%</th><th>Win Rate</th><th>Kills</th><th>Stunden</th><th></th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>`;
+    container.innerHTML = (top3.length > 0 ? podium : "") +
+      '<div class="table-wrap"><table class="leaderboard-table"><thead><tr>' +
+      '<th>#</th><th>Spieler</th>' +
+      SORT_OPTIONS.map(function(opt) {
+        var arrow = currentSort === opt.key ? " &#9660;" : " &#8597;";
+        return '<th class="' + (currentSort === opt.key ? "sorted" : "") + '" onclick="setSort(\'' + opt.key + '\')">' + opt.label + '<span class="arrow">' + arrow + '</span></th>';
+      }).join("") +
+      '<th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   loadLeaderboard();
