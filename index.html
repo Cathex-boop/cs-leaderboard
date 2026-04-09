@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CS2 Premier Leaderboard</title>
+  <title>CS2 GoonerGang</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -35,7 +35,7 @@
     .podium-val { font-size: 22px; font-weight: 800; color: #ff6b00; }
     .podium-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
     .table-wrap { overflow-x: auto; border-radius: 12px; }
-    .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 620px; }
+    .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 720px; }
     .leaderboard-table thead tr { background: #1a1e2a; border-bottom: 1px solid #2a2e3d; }
     .leaderboard-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none; transition: color 0.2s; white-space: nowrap; }
     .leaderboard-table th:hover { color: #ff6b00; }
@@ -57,6 +57,8 @@
     .hi-val { font-weight: 800; font-size: 15px; color: #ff6b00; }
     .null-val { color: #2a2e3d; }
     .steam-link { color: #94a3b8; text-decoration: none; font-size: 12px; padding: 4px 10px; border: 1px solid #2a2e3d; border-radius: 4px; transition: all 0.2s; white-space: nowrap; }
+    .leaderboard-table td:last-child, .leaderboard-table th:last-child { width: 80px; min-width: 80px; text-align: right; }
+    .leaderboard-table td:nth-last-child(2), .leaderboard-table th:nth-last-child(2) { min-width: 70px; }
     .steam-link:hover { border-color: #ff6b00; color: #ff6b00; }
     .loading { text-align: center; padding: 80px 0; color: #64748b; }
     .spinner { width: 40px; height: 40px; border: 3px solid #2a2e3d; border-top-color: #ff6b00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
@@ -75,7 +77,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">LEADERBOARD</span>
+      <span class="logo-lb">GOONER-BOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadLeaderboard()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
