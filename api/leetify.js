@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { steamId } = req.query;
 
   if (!steamId) {
@@ -8,14 +8,12 @@ export default async function handler(req, res) {
   const apiKey = process.env.STEAM_API_KEY;
 
   try {
-    // Profildaten (Name, Avatar)
     const summaryRes = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`
     );
     const summaryData = await summaryRes.json();
     const player = (summaryData?.response?.players || [])[0] || {};
 
-    // CS2 Spielstatistiken (AppID 730)
     const statsRes = await fetch(
       `https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v2/?key=${apiKey}&steamid=${steamId}&appid=730`
     );
@@ -27,14 +25,14 @@ export default async function handler(req, res) {
       return found ? found.value : null;
     };
 
-    const kills       = getStat("total_kills");
-    const deaths      = getStat("total_deaths");
-    const wins        = getStat("total_wins_map") ?? getStat("total_matches_won");
-    const headshots   = getStat("total_kills_headshot");
-    const timePlayed  = getStat("total_time_played");
-    const totalRounds = getStat("total_rounds_played");
+    const kills        = getStat("total_kills");
+    const deaths       = getStat("total_deaths");
+    const wins         = getStat("total_wins_map") ?? getStat("total_matches_won");
+    const headshots    = getStat("total_kills_headshot");
+    const timePlayed   = getStat("total_time_played");
+    const totalRounds  = getStat("total_rounds_played");
     const totalMatches = getStat("total_matches_played");
-    const damage      = getStat("total_damage_done");
+    const damage       = getStat("total_damage_done");
 
     const kd = kills != null && deaths != null && deaths > 0
       ? (kills / deaths).toFixed(2) : null;
@@ -50,3 +48,6 @@ export default async function handler(req, res) {
 
     const hoursPlayed = timePlayed != null
       ? Math.round(timePlayed / 3600) : null;
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.set
