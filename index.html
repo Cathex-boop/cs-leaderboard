@@ -6,219 +6,58 @@
   <title>CS2 Premier Leaderboard</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #0d0f14;
-      color: #e2e8f0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #13161e;
-      border-bottom: 2px solid #ff6b00;
-      padding: 0 24px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-    }
-
-    .header-inner {
-      max-width: 960px;
-      width: 100%;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    header { background: #13161e; border-bottom: 2px solid #ff6b00; padding: 0 24px; height: 64px; display: flex; align-items: center; }
+    .header-inner { max-width: 960px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
     .logo { display: flex; align-items: baseline; gap: 8px; }
     .logo-cs { color: #ff6b00; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
     .logo-lb { color: #94a3b8; font-size: 13px; font-weight: 600; letter-spacing: 3px; }
-
-    #refreshBtn {
-      background: #ff6b00;
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      transition: background 0.2s;
-    }
+    #refreshBtn { background: #ff6b00; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background 0.2s; }
     #refreshBtn:hover { background: #e05a00; }
     #refreshBtn:disabled { background: #333; cursor: not-allowed; }
-
-    main {
-      max-width: 960px;
-      margin: 32px auto;
-      padding: 0 16px;
-    }
-
-    .updated-info {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 16px;
-      text-align: right;
-    }
-
-    .podium {
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 12px;
-      margin-bottom: 36px;
-    }
-
-    .podium-card {
-      background: #1a1e2a;
-      border-radius: 12px;
-      padding: 24px 16px;
-      text-align: center;
-      flex: 1;
-      max-width: 220px;
-      border: 2px solid transparent;
-    }
+    main { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+    .updated-info { font-size: 12px; color: #64748b; margin-bottom: 16px; text-align: right; }
+    .podium { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 36px; }
+    .podium-card { background: #1a1e2a; border-radius: 12px; padding: 24px 16px; text-align: center; flex: 1; max-width: 220px; border: 2px solid transparent; }
     .podium-card.rank-1 { border-color: #FFD700; transform: translateY(-14px); }
     .podium-card.rank-2 { border-color: #C0C0C0; }
     .podium-card.rank-3 { border-color: #CD7F32; }
-
-    .podium-medal {
-      font-size: 28px;
-      margin-bottom: 10px;
-      line-height: 1;
-    }
+    .podium-medal { font-size: 28px; margin-bottom: 10px; line-height: 1; }
     .medal-gold   { color: #FFD700; font-weight: 900; }
     .medal-silver { color: #C0C0C0; font-weight: 900; }
     .medal-bronze { color: #CD7F32; font-weight: 900; }
-
-    .podium-avatar {
-      width: 72px; height: 72px;
-      border-radius: 50%;
-      margin: 0 auto 10px;
-      display: block;
-      border: 3px solid #2a2e3d;
-      background: #2a2e3d;
-      object-fit: cover;
-    }
+    .podium-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 10px; display: block; border: 3px solid #2a2e3d; background: #2a2e3d; object-fit: cover; }
     .podium-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: #f1f5f9; }
     .podium-rating { font-size: 24px; font-weight: 800; color: #ff6b00; }
     .podium-rating-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
-
     .table-wrap { overflow-x: auto; border-radius: 12px; }
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #13161e;
-      border-radius: 12px;
-      overflow: hidden;
-      min-width: 560px;
-    }
-    .leaderboard-table thead tr {
-      background: #1a1e2a;
-      border-bottom: 1px solid #2a2e3d;
-    }
-    .leaderboard-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .leaderboard-table td {
-      padding: 14px 16px;
-      border-bottom: 1px solid #1a1e2a;
-      font-size: 14px;
-    }
+    .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 560px; }
+    .leaderboard-table thead tr { background: #1a1e2a; border-bottom: 1px solid #2a2e3d; }
+    .leaderboard-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 1px; text-transform: uppercase; }
+    .leaderboard-table td { padding: 14px 16px; border-bottom: 1px solid #1a1e2a; font-size: 14px; }
     .leaderboard-table tbody tr:last-child td { border-bottom: none; }
     .leaderboard-table tbody tr:hover { background: #1a1e2a; transition: background 0.15s; }
-
     .player-cell { display: flex; align-items: center; gap: 12px; }
-    .player-avatar {
-      width: 38px; height: 38px;
-      border-radius: 6px;
-      background: #2a2e3d;
-      object-fit: cover;
-    }
+    .player-avatar { width: 38px; height: 38px; border-radius: 6px; background: #2a2e3d; object-fit: cover; }
     .player-name { font-weight: 600; color: #f1f5f9; }
     .player-steam { font-size: 11px; color: #64748b; }
-
-    .rank-badge {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 13px;
-    }
+    .rank-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
     .r1 { background: rgba(255,215,0,0.15); color: #FFD700; }
     .r2 { background: rgba(192,192,192,0.15); color: #C0C0C0; }
     .r3 { background: rgba(205,127,50,0.15); color: #CD7F32; }
     .rn { background: #1a1e2a; color: #64748b; }
-
     .rating-val { font-weight: 800; font-size: 16px; color: #ff6b00; }
     .null-val { color: #2a2e3d; }
-
-    .leetify-link {
-      color: #94a3b8;
-      text-decoration: none;
-      font-size: 12px;
-      padding: 4px 10px;
-      border: 1px solid #2a2e3d;
-      border-radius: 4px;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
+    .leetify-link { color: #94a3b8; text-decoration: none; font-size: 12px; padding: 4px 10px; border: 1px solid #2a2e3d; border-radius: 4px; transition: all 0.2s; white-space: nowrap; }
     .leetify-link:hover { border-color: #ff6b00; color: #ff6b00; }
-
-    .loading {
-      text-align: center;
-      padding: 80px 0;
-      color: #64748b;
-    }
-    .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #2a2e3d;
-      border-top-color: #ff6b00;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
-    }
+    .loading { text-align: center; padding: 80px 0; color: #64748b; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #2a2e3d; border-top-color: #ff6b00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    .error-msg {
-      text-align: center;
-      padding: 40px;
-      color: #ef4444;
-      background: rgba(239,68,68,0.07);
-      border-radius: 12px;
-    }
-
-    .info-banner {
-      background: rgba(255,107,0,0.08);
-      border: 1px solid rgba(255,107,0,0.25);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      color: #94a3b8;
-    }
+    .error-msg { text-align: center; padding: 40px; color: #ef4444; background: rgba(239,68,68,0.07); border-radius: 12px; }
+    .info-banner { background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #94a3b8; }
     .info-banner a { color: #ff6b00; text-decoration: none; }
-    .info-banner a:hover { text-decoration: underline; }
-
-    .attribution {
-      text-align: center;
-      margin-top: 32px;
-      font-size: 12px;
-      color: #475569;
-    }
+    .attribution { text-align: center; margin-top: 32px; font-size: 12px; color: #475569; }
     .attribution a { color: #ff6b00; text-decoration: none; }
-    .attribution a:hover { text-decoration: underline; }
-
     @media (max-width: 600px) {
       .podium { flex-direction: column; align-items: center; }
       .podium-card { max-width: 100%; width: 100%; transform: none !important; }
@@ -226,122 +65,109 @@
   </style>
 </head>
 <body>
-
 <header>
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
       <span class="logo-lb">LEADERBOARD</span>
     </div>
-    <button id="refreshBtn" onclick="loadLeaderboard()">
-      &#x21BB;&nbsp;Aktualisieren
-    </button>
+    <button id="refreshBtn" onclick="loadLeaderboard()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
 </header>
 
 <main>
   <div class="updated-info" id="updatedAt"></div>
-
   <div class="info-banner">
     &#9432;&nbsp; Damit Werte angezeigt werden, muss jeder Spieler einmalig bei
     <a href="https://leetify.com" target="_blank">leetify.com</a> mit Steam einloggen
     und sein Profil auf <strong>&#246;ffentlich</strong> stellen.
   </div>
-
   <div id="container">
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>Lade Daten von Leetify...</p>
-    </div>
+    <div class="loading"><div class="spinner"></div><p>Lade Daten von Leetify...</p></div>
   </div>
-
-  <div class="attribution">
-    Data provided by <a href="https://leetify.com" target="_blank">Leetify</a>
-  </div>
+  <div class="attribution">Data provided by <a href="https://leetify.com" target="_blank">Leetify</a></div>
 </main>
 
 <script>
   const PLAYERS = [
     { steamId64: "76561198212183875", displayName: "Lehon" },
-    { steamId64: "76561198010694730", displayName: "Pata"  },
+    { steamId64: "76561198986416516", displayName: "Pata"  },
     { steamId64: "76561199208386886", displayName: "Zven"  }
   ];
 
-  const PROXY   = "https://corsproxy.io/?url=";
   const LEETIFY = "https://api.cs-prod.leetify.com/api/profile/";
+
+  // Mehrere Proxies als Fallback
+  const PROXIES = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+  ];
+
+  async function fetchWithFallback(targetUrl) {
+    for (const proxy of PROXIES) {
+      try {
+        const res = await fetch(proxy(targetUrl), { signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+          const text = await res.text();
+          return JSON.parse(text);
+        }
+      } catch(e) {
+        continue;
+      }
+    }
+    throw new Error("Alle Proxies fehlgeschlagen");
+  }
 
   async function fetchPlayer(player) {
     try {
-      const url = PROXY + encodeURIComponent(LEETIFY + player.steamId64);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+      const data = await fetchWithFallback(LEETIFY + player.steamId64);
 
-      // Flexibles Mapping — deckt alte & neue Leetify-API-Struktur ab
       const meta   = data.meta || data.playerSummary || data.profile || {};
       const games  = data.games || data.matchHistory || [];
       const recent = data.recentGames || data.recentMatches || games.slice(0, 10);
 
       const csRating =
-        meta.csRating       ??
-        meta.premierRating  ??
-        meta.cs_rating      ??
-        data.csRating       ??
-        data.premierRating  ??
-        null;
+        meta.csRating      ?? meta.premierRating ??
+        meta.cs_rating     ?? data.csRating      ??
+        data.premierRating ?? null;
 
       const avatar =
-        meta.avatarUrl   ||
-        meta.avatar      ||
-        meta.avatarFull  ||
-        meta.profilePicture ||
-        null;
+        meta.avatarUrl || meta.avatar || meta.avatarFull ||
+        meta.profilePicture || null;
 
       const steamName =
-        meta.name        ||
-        meta.steamName   ||
-        meta.personaname ||
-        player.displayName;
+        meta.name || meta.steamName || meta.personaname || player.displayName;
 
-      const wins      = games.filter(g => g.won === true || g.result === "win").length;
-      const winRate   = games.length > 0 ? ((wins / games.length) * 100).toFixed(1) : null;
+      const wins    = games.filter(g => g.won === true || g.result === "win").length;
+      const winRate = games.length > 0 ? ((wins / games.length) * 100).toFixed(1) : null;
 
-      const kdValues  = recent.map(g => g.kdRatio ?? g.kd ?? g.kd_ratio ?? null).filter(v => v !== null);
-      const adrValues = recent.map(g => g.adr ?? g.averageDamagePerRound ?? null).filter(v => v !== null);
-
-      const avgKd  = kdValues.length  > 0 ? (kdValues.reduce((s,v)  => s+v, 0) / kdValues.length).toFixed(2)  : null;
-      const avgAdr = adrValues.length > 0 ? (adrValues.reduce((s,v) => s+v, 0) / adrValues.length).toFixed(1) : null;
+      const kdVals  = recent.map(g => g.kdRatio ?? g.kd ?? g.kd_ratio ?? null).filter(v => v !== null);
+      const adrVals = recent.map(g => g.adr ?? g.averageDamagePerRound ?? null).filter(v => v !== null);
+      const avgKd   = kdVals.length  > 0 ? (kdVals.reduce((s,v)  => s+v, 0) / kdVals.length).toFixed(2)  : null;
+      const avgAdr  = adrVals.length > 0 ? (adrVals.reduce((s,v) => s+v, 0) / adrVals.length).toFixed(1) : null;
 
       return {
-        steamId64:     player.steamId64,
-        displayName:   player.displayName,
-        steamName,
-        avatar,
-        premierRating: csRating,
-        kd:            avgKd,
-        adr:           avgAdr,
-        winRate,
-        totalGames:    games.length,
-        leetifyUrl:    "https://leetify.com/app/profile/" + player.steamId64
+        steamId64: player.steamId64, displayName: player.displayName,
+        steamName, avatar, premierRating: csRating,
+        kd: avgKd, adr: avgAdr, winRate, totalGames: games.length,
+        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64
       };
     } catch(e) {
       return {
-        steamId64:     player.steamId64,
-        displayName:   player.displayName,
-        steamName:     player.displayName,
-        avatar:        null,
-        premierRating: null,
-        kd: null, adr: null, winRate: null, totalGames: null,
-        leetifyUrl:    "https://leetify.com/app/profile/" + player.steamId64,
-        error:         true
+        steamId64: player.steamId64, displayName: player.displayName,
+        steamName: player.displayName, avatar: null,
+        premierRating: null, kd: null, adr: null, winRate: null, totalGames: null,
+        leetifyUrl: "https://leetify.com/app/profile/" + player.steamId64,
+        error: true
       };
     }
   }
 
   async function loadLeaderboard() {
-    const btn       = document.getElementById("refreshBtn");
+    const btn = document.getElementById("refreshBtn");
     const container = document.getElementById("container");
-    btn.disabled    = true;
+    btn.disabled = true;
     btn.textContent = "Ladt...";
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Daten von Leetify...</p></div>';
 
@@ -352,8 +178,8 @@
       "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
 
     render(sorted);
-    btn.disabled    = false;
-    btn.innerHTML   = "&#x21BB;&nbsp;Aktualisieren";
+    btn.disabled  = false;
+    btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
   }
 
   function val(v, suffix) {
@@ -368,24 +194,19 @@
   ];
 
   function render(players) {
-    const container  = document.getElementById("container");
-    const top3       = players.slice(0, 3);
-    const rankClass  = ["r1","r2","r3"];
+    const container = document.getElementById("container");
+    const top3 = players.slice(0, 3);
+    const rankClass = ["r1","r2","r3"];
 
-    // Podium: Reihenfolge 2. - 1. - 3.
     const order = top3.length === 3 ? [1,0,2] : top3.map((_,i) => i);
-    let podium  = '<div class="podium">';
+    let podium = '<div class="podium">';
     order.forEach(i => {
       if (!top3[i]) return;
-      const p = top3[i];
-      const r = i + 1;
-      const borderClass = ["rank-1","rank-2","rank-3"][i];
+      const p = top3[i]; const r = i + 1;
       podium += `
-        <div class="podium-card ${borderClass}">
-          <div class="podium-medal">${MEDALS[i] || "#" + r}</div>
-          ${p.avatar
-            ? `<img class="podium-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>`
-            : '<div class="podium-avatar"></div>'}
+        <div class="podium-card rank-${r}">
+          <div class="podium-medal">${MEDALS[i] || "#"+r}</div>
+          ${p.avatar ? `<img class="podium-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>` : '<div class="podium-avatar"></div>'}
           <div class="podium-name">${p.displayName}</div>
           <div class="podium-rating">${p.premierRating != null ? p.premierRating.toLocaleString("de-DE") : "&#8212;"}</div>
           <div class="podium-rating-label">CS RATING</div>
@@ -401,39 +222,31 @@
           <td><div class="rank-badge ${rc}">${idx+1}</div></td>
           <td>
             <div class="player-cell">
-              ${p.avatar
-                ? `<img class="player-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>`
-                : '<div class="player-avatar"></div>'}
+              ${p.avatar ? `<img class="player-avatar" src="${p.avatar}" alt="${p.displayName}" onerror="this.style.visibility='hidden'"/>` : '<div class="player-avatar"></div>'}
               <div>
                 <div class="player-name">${p.displayName}</div>
                 ${p.steamName !== p.displayName ? `<div class="player-steam">${p.steamName}</div>` : ""}
               </div>
             </div>
           </td>
-          <td>${p.premierRating != null
-            ? `<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>`
-            : '<span class="null-val">&#8212;</span>'}</td>
+          <td>${p.premierRating != null ? `<span class="rating-val">${p.premierRating.toLocaleString("de-DE")}</span>` : '<span class="null-val">&#8212;</span>'}</td>
           <td>${val(p.kd)}</td>
           <td>${val(p.adr)}</td>
-          <td>${val(p.winRate, "%")}</td>
+          <td>${val(p.winRate,"%")}</td>
           <td><a class="leetify-link" href="${p.leetifyUrl}" target="_blank">Leetify &#8599;</a></td>
         </tr>`;
     });
 
-    const table = `
+    container.innerHTML = (top3.length > 0 ? podium : "") + `
       <div class="table-wrap">
         <table class="leaderboard-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Spieler</th><th>Premier Rating</th>
-              <th>K/D</th><th>ADR</th><th>Win Rate</th><th></th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>#</th><th>Spieler</th><th>Premier Rating</th>
+            <th>K/D</th><th>ADR</th><th>Win Rate</th><th></th>
+          </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
-
-    container.innerHTML = (top3.length > 0 ? podium : "") + table;
   }
 
   loadLeaderboard();
