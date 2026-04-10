@@ -139,7 +139,7 @@ var currentDays = 7;
 var allPlayers  = [];
 
 async function apiFetch(path) {
-  var res = await fetch("/api/leetify?path=" + encodeURIComponent(path));
+  var res = await fetch("/api/leetify?path=" + path);
   if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
