@@ -323,6 +323,16 @@ function renderSorted() {
 }
 
 loadAll();
+
+  // Auth check — redirect to login if not authenticated
+  (async function checkAuth() {
+    try {
+      var r = await fetch("/api/auth");
+      if (!r.ok) window.location.href = "/login";
+    } catch(e) {
+      window.location.href = "/login";
+    }
+  })();
 </script>
 </body>
 </html>
