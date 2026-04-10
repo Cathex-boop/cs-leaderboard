@@ -91,7 +91,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">GOONER-BOARD</span>
+      <span class="logo-lb">GONNER-BOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadAll()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
@@ -155,7 +155,7 @@ const SORT_MATCH = [
 
 // All-Time Modus: globale Profil-Werte
 const SORT_ALLTIME = [
-  { key: "leetifyRating", label: "Leetify Rating",suffix: "",   fmt: function(v){ return v.toFixed(2); } },
+  { key: "leetifyRatingAlltime", label: "Leetify Rating",suffix: "",   fmt: function(v){ return v.toFixed(2); } },
   { key: "aim",           label: "Aim",           suffix: "",   fmt: function(v){ return v.toFixed(1); } },
   { key: "positioning",   label: "Positioning",   suffix: "",   fmt: function(v){ return v.toFixed(1); } },
   { key: "utility",       label: "Utility",       suffix: "",   fmt: function(v){ return v.toFixed(1); } },
@@ -236,11 +236,15 @@ async function fetchPlayer(player) {
       ? (matchesForCalc.filter(function(m){ return m.outcome === "win"; }).length / matchesForCalc.length) * 100
       : (profile.winrate != null ? profile.winrate * 100 : null);
 
-    // Leetify rating from filtered matches
-    var lRatings = matchesForCalc.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
-    var leetifyRating = lRatings.length
+    // Leetify rating: match-filtered average vs all-time profile value
+    var lRatings = matches.length
+      ? matches.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; })
+      : [];
+    var leetifyRatingMatch   = lRatings.length
       ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length
-      : (ranks.leetify != null ? ranks.leetify : null);
+      : null;
+    var leetifyRatingAlltime = ranks.leetify != null ? ranks.leetify : null;
+    var leetifyRating        = leetifyRatingMatch != null ? leetifyRatingMatch : leetifyRatingAlltime;
 
     // HS% from filtered matches
     var hsVals = matchesForCalc.map(function(m){ return m.accuracy_head; }).filter(function(v){ return v != null; });
@@ -269,9 +273,11 @@ async function fetchPlayer(player) {
       avatar:        avatar,
       profileUrl:    profileUrl,
       steamId64:     player.steamId64,
-      matches:       matches.length,
-      winRate:       winRate,
-      leetifyRating: leetifyRating,
+      matches:            matches.length,
+      winRate:            winRate,
+      leetifyRating:      leetifyRating,
+      leetifyRatingMatch: leetifyRatingMatch,
+      leetifyRatingAlltime: leetifyRatingAlltime,
       hsPercent:     hsPercent,
       accuracy:      accuracy,
       sprayAccuracy: sprayAccuracy,
@@ -289,7 +295,7 @@ async function fetchPlayer(player) {
     return {
       displayName: player.displayName, steamName: fb.steamName || player.displayName,
       avatar: fb.avatar, profileUrl: null, steamId64: player.steamId64,
-      matches: null, winRate: null, leetifyRating: null, hsPercent: null,
+      matches: null, winRate: null, leetifyRating: null, leetifyRatingMatch: null, leetifyRatingAlltime: null, hsPercent: null,
       accuracy: null, sprayAccuracy: null, reactionTime: null,
       aim: null, positioning: null, utility: null, premierRank: null,
       clutch: null, openingDuels: null, flashAssists: null, error: true
@@ -377,8 +383,8 @@ function renderSorted() {
   ] : [
     { key: null,            label: "#"              },
     { key: null,            label: "Spieler"        },
-    { key: "leetifyRating", label: "Leetify Rating" },
-    { key: "aim",           label: "Aim"            },
+    { key: "leetifyRatingAlltime", label: "Leetify Rating" },
+    { key: "aim",                  label: "Aim"            },
     { key: "positioning",   label: "Positioning"    },
     { key: "utility",       label: "Utility"        },
     { key: "clutch",        label: "Clutch"         },
@@ -407,7 +413,7 @@ function renderSorted() {
         '<td>' + fmtVal(p, "accuracy")      + '</td>' +
         '<td>' + fmtVal(p, "sprayAccuracy") + '</td>' +
         '<td>' + fmtVal(p, "reactionTime")  + '</td>'
-      : '<td><span class="hi-val">' + fmtVal(p, "leetifyRating") + '</span></td>' +
+      : '<td><span class="hi-val">' + fmtVal(p, "leetifyRatingAlltime") + '</span></td>' +
         '<td>' + fmtVal(p, "aim")           + '</td>' +
         '<td>' + fmtVal(p, "positioning")   + '</td>' +
         '<td>' + fmtVal(p, "utility")       + '</td>' +
