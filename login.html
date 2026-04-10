@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CS2 Leaderboard – Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0f14; color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .card {
+      background: #13161e; border: 1px solid #2a2e3d;
+      border-top: 3px solid #ff6b00;
+      border-radius: 14px; padding: 40px 36px; width: 360px; max-width: 90vw;
+    }
+    .logo { display: flex; align-items: baseline; gap: 8px; margin-bottom: 28px; }
+    .logo-cs { color: #ff6b00; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+    .logo-lb { color: #94a3b8; font-size: 13px; font-weight: 600; letter-spacing: 3px; }
+    h2 { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    p  { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+    label { font-size: 12px; color: #94a3b8; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    input[type=password] {
+      width: 100%; background: #0d0f14; border: 1px solid #2a2e3d;
+      color: #f1f5f9; padding: 11px 14px; border-radius: 8px;
+      font-size: 14px; margin-bottom: 18px; outline: none; transition: border-color .2s;
+    }
+    input[type=password]:focus { border-color: #ff6b00; }
+    button {
+      width: 100%; background: #ff6b00; color: #fff; border: none;
+      padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    button:hover { background: #e05a00; }
+    button:disabled { background: #333; cursor: not-allowed; }
+    .error {
+      background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.3);
+      border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #ff6b00;
+      margin-bottom: 16px; display: none;
+    }
+    .error.visible { display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="logo-cs">CS2</span>
+    <span class="logo-lb">LEADERBOARD</span>
+  </div>
+  <h2>Zugang gesperrt</h2>
+  <p>Bitte Passwort eingeben um fortzufahren.</p>
+  <div class="error" id="errMsg">&#x26A0;&nbsp; Falsches Passwort. Bitte erneut versuchen.</div>
+  <label>PASSWORT</label>
+  <input type="password" id="pwInput" placeholder="••••••••" autocomplete="current-password"
+         onkeydown="if(event.key==='Enter') login()"/>
+  <button id="loginBtn" onclick="login()">Einloggen &rarr;</button>
+</div>
+<script>
+async function login() {
+  var pw  = document.getElementById("pwInput").value;
+  var btn = document.getElementById("loginBtn");
+  var err = document.getElementById("errMsg");
+  if (!pw) return;
+  btn.disabled = true; btn.textContent = "Prüfe...";
+  err.classList.remove("visible");
+
+  var res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pw })
+  });
+
+  if (res.ok) {
+    window.location.href = "/";
+  } else {
+    err.classList.add("visible");
+    btn.disabled = false; btn.textContent = "Einloggen →";
+    document.getElementById("pwInput").value = "";
+    document.getElementById("pwInput").focus();
+  }
+}
+</script>
+</body>
+</html>
