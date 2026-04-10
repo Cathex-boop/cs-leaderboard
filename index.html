@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CS2 GoonerGang</title>
+  <title>CS2 Premier Leaderboard</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -87,7 +87,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">GOONER-BOARD</span>
+      <span class="logo-lb">LEADERBOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadAll()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
@@ -96,7 +96,7 @@
 <main>
   <div class="updated-info" id="updatedAt"></div>
   <div class="info-banner">
-    &#9432;&nbsp; Daten via <strong>Leetify</strong> &mdash; CS2 only. Zeitraum w&auml;hlbar.
+    &#9432;&nbsp; Daten via <strong>Leetify</strong> &mdash; CS2 only, kein CS:GO. Zeitraum w&auml;hlbar.
   </div>
 
   <div class="filter-row">
@@ -119,14 +119,9 @@
 
 <script>
 const PLAYERS = [
-    { steamId64: "76561198212183875", displayName: "Lehon" },
-    { steamId64: "76561198010694730", displayName: "Pata"  },
-    { steamId64: "76561198929555797", displayName: "Malwie"  },
-    { steamId64: "76561198205465816", displayName: "AimDemon"  },
-    { steamId64: "76561198068774293", displayName: "Stabils"  },
-    { steamId64: "76561197974640447", displayName: "Tolgus"  },
-    { steamId64: "76561198189619710", displayName: "GoonerBoy"  },
-    { steamId64: "76561199208386886", displayName: "Zven"  }
+  { steamId64: "76561198212183875", displayName: "Lehon" },
+  { steamId64: "76561198986416516", displayName: "Pata"  },
+  { steamId64: "76561199208386886", displayName: "Zven"  }
 ];
 
 const SORT_OPTIONS = [
@@ -220,7 +215,7 @@ async function fetchPlayer(player) {
       ? stats.flashbang_hit_foe_per_flashbang : null;
 
     // Show filtered match count, fallback to total
-    var matchCount = matches.length ? matches.length : (profile.total_matches || null);
+    var matchCount = matches.length; // exact count in selected time window, 0 if none
 
     // Opening duel success: average of CT and T side
     var ctOD = stats.ct_opening_duel_success_percentage != null ? stats.ct_opening_duel_success_percentage : null;
