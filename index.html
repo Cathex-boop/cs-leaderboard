@@ -124,14 +124,15 @@ const PLAYERS = [
 ];
 
 const SORT_OPTIONS = [
-  { key: "leetifyRating", label: "Leetify Rating", suffix: "",  fmt: function(v){ return v.toFixed(2); } },
-  { key: "kd",            label: "K/D",             suffix: "",  fmt: function(v){ return v.toFixed(2); } },
-  { key: "hsPercent",     label: "HS %",             suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "winRate",       label: "Win %",            suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "adr",           label: "ADR",              suffix: "",  fmt: function(v){ return v.toFixed(1); } },
-  { key: "kills",         label: "Kills",            suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
-  { key: "flashAssists",  label: "Flash Ast",        suffix: "",  fmt: function(v){ return v.toFixed(2); } },
-  { key: "matches",       label: "Matches",          suffix: "",  fmt: function(v){ return v; } }
+  { key: "leetifyRating", label: "Leetify Rating", suffix: "",  fmt: function(v){ return v.toFixed(3); } },
+  { key: "winRate",       label: "Win %",           suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "hsPercent",     label: "HS %",            suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "aim",           label: "Aim",             suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "positioning",   label: "Positioning",     suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "utility",       label: "Utility",         suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "flashAssists",  label: "Flash Ast",       suffix: "",  fmt: function(v){ return v.toFixed(2); } },
+  { key: "premierRank",   label: "Premier",         suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
+  { key: "matches",       label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
 ];
 
 var currentSort = "leetifyRating";
@@ -161,43 +162,49 @@ function cutoffDate() {
 async function fetchPlayer(player) {
   try {
     var profile = await apiFetch("/v3/profile?steamId=" + player.steamId64);
-    // Support both v3 and legacy field names
-    var summary    = profile.playerSummary || profile.player || {};
-    var avatar     = summary.avatarUrl || summary.avatar || null;
-    var steamName  = summary.name || summary.steamName || player.displayName;
+
+    // Real v3 field names from Leetify API
+    var steamName  = profile.name || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
+    var avatar     = null; // v3 profile has no avatar field — use Steam fallback
     var cutoff     = cutoffDate();
 
-    // v3: games may be under profile.games or profile.recentGames or profile.matches
-    var allGames = profile.games || profile.recentGames || profile.matches || [];
-    var games = allGames.filter(function(g) {
-      var date = g.gameFinishedAt || g.finishedAt || g.date || null;
-      return date && new Date(date) >= cutoff;
+    // Filter recent_matches by date window
+    var allMatches = profile.recent_matches || [];
+    var matches = allMatches.filter(function(g) {
+      return g.finished_at && new Date(g.finished_at) >= cutoff;
     });
 
-    if (!games.length) {
-      return { displayName: player.displayName, steamName: steamName, avatar: avatar,
-        profileUrl: profileUrl, steamId64: player.steamId64, matches: 0,
-        kd: null, hsPercent: null, winRate: null, adr: null,
-        kills: null, leetifyRating: null, flashAssists: null };
-    }
+    // Overall stats from profile.stats and profile.rating
+    var stats   = profile.stats   || {};
+    var rating  = profile.rating  || {};
 
-    var totalKills=0, totalDeaths=0, totalHS=0, totalWins=0;
-    var totalDmg=0, totalRounds=0, totalLeetify=0, lCount=0, totalFlash=0;
+    // Win rate from profile (total) — or calculate from filtered matches
+    var winRate = matches.length
+      ? (matches.filter(function(m){ return m.outcome === "win"; }).length / matches.length) * 100
+      : (profile.winrate != null ? profile.winrate * 100 : null);
 
-    games.forEach(function(g) {
-      totalKills   += g.kills   || g.totalKills  || 0;
-      totalDeaths  += g.deaths  || g.totalDeaths || 0;
-      totalHS      += g.hsKills || g.headshotKills || 0;
-      var won = g.won || g.isWin || g.result === "win" || false;
-      if (won) totalWins++;
-      var rounds = g.roundsPlayed || g.rounds || 20;
-      totalDmg    += (g.damagePerRound || g.adr || 0) * rounds;
-      totalRounds += rounds;
-      var lr = g.leetifyRating || g.rating || null;
-      if (lr != null) { totalLeetify += lr; lCount++; }
-      totalFlash  += g.flashAssistsPerRound || g.flashAssists || 0;
-    });
+    // Leetify rating: average over filtered matches
+    var lRatings = matches.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
+    var leetifyRating = lRatings.length
+      ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length
+      : (rating.ct_leetify != null && rating.t_leetify != null
+          ? (rating.ct_leetify + rating.t_leetify) / 2
+          : null);
+
+    // HS% from profile.stats.accuracy_head
+    var hsPercent = stats.accuracy_head != null ? stats.accuracy_head : null;
+
+    // Flash assists per flashbang from stats
+    var flashAssists = stats.flashbang_hit_foe_per_flashbang != null
+      ? stats.flashbang_hit_foe_per_flashbang : null;
+
+    // Total matches in window
+    var matchCount = matches.length || profile.total_matches || null;
+
+    // ADR, K/D, kills not directly in v3/profile — show from rating scores instead
+    // Use aim/positioning/utility as proxy display, and ranks for context
+    var ranks = profile.ranks || {};
 
     return {
       displayName:   player.displayName,
@@ -205,14 +212,19 @@ async function fetchPlayer(player) {
       avatar:        avatar,
       profileUrl:    profileUrl,
       steamId64:     player.steamId64,
-      matches:       games.length,
-      kd:            totalDeaths ? totalKills / totalDeaths : totalKills,
-      hsPercent:     totalKills  ? (totalHS / totalKills) * 100 : 0,
-      winRate:       games.length ? (totalWins / games.length) * 100 : 0,
-      adr:           totalRounds ? totalDmg / totalRounds : 0,
-      kills:         totalKills,
-      leetifyRating: lCount ? totalLeetify / lCount : null,
-      flashAssists:  games.length ? totalFlash / games.length : null
+      matches:       matchCount,
+      kd:            null, // not in v3/profile endpoint
+      hsPercent:     hsPercent,
+      winRate:       winRate,
+      adr:           null, // not in v3/profile endpoint
+      kills:         null, // not in v3/profile endpoint
+      leetifyRating: leetifyRating,
+      flashAssists:  flashAssists,
+      // Extra Leetify-specific fields
+      aim:           rating.aim           != null ? rating.aim           : null,
+      positioning:   rating.positioning   != null ? rating.positioning   : null,
+      utility:       rating.utility       != null ? rating.utility       : null,
+      premierRank:   ranks.premier        != null ? ranks.premier        : null
     };
   } catch(e) {
     return { displayName: player.displayName, steamName: player.displayName,
@@ -284,12 +296,13 @@ function renderSorted() {
     { key: null,            label: "Spieler"        },
     { key: "matches",       label: "Matches"        },
     { key: "leetifyRating", label: "Leetify Rating" },
-    { key: "kd",            label: "K/D"            },
-    { key: "adr",           label: "ADR"            },
-    { key: "hsPercent",     label: "HS %"           },
     { key: "winRate",       label: "Win %"          },
-    { key: "kills",         label: "Kills"          },
+    { key: "hsPercent",     label: "HS %"           },
+    { key: "aim",           label: "Aim"            },
+    { key: "positioning",   label: "Positioning"    },
+    { key: "utility",       label: "Utility"        },
     { key: "flashAssists",  label: "Flash Ast"      },
+    { key: "premierRank",   label: "Premier"        },
     { key: null,            label: ""               }
   ];
 
@@ -314,12 +327,13 @@ function renderSorted() {
         '</div></div></td>' +
       '<td>' + (p.matches != null ? '<span class="matches-badge">' + p.matches + '</span>' : '<span class="null-val">&#8212;</span>') + '</td>' +
       '<td><span class="hi-val">' + fmtVal(p, "leetifyRating") + '</span></td>' +
-      '<td>' + fmtVal(p, "kd")           + '</td>' +
-      '<td>' + fmtVal(p, "adr")          + '</td>' +
-      '<td>' + fmtVal(p, "hsPercent")    + '</td>' +
       '<td>' + fmtVal(p, "winRate")      + '</td>' +
-      '<td>' + fmtVal(p, "kills")        + '</td>' +
+      '<td>' + fmtVal(p, "hsPercent")    + '</td>' +
+      '<td>' + fmtVal(p, "aim")          + '</td>' +
+      '<td>' + fmtVal(p, "positioning")  + '</td>' +
+      '<td>' + fmtVal(p, "utility")      + '</td>' +
       '<td>' + fmtVal(p, "flashAssists") + '</td>' +
+      '<td>' + fmtVal(p, "premierRank")  + '</td>' +
       '<td>' + (p.profileUrl ? '<a class="ext-link" href="' + p.profileUrl + '" target="_blank">Leetify &#8599;</a>' : '') + '</td>' +
       '</tr>';
   });
