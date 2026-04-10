@@ -17,21 +17,15 @@
     #refreshBtn:disabled { background: #333; cursor: not-allowed; }
     main { max-width: 960px; margin: 32px auto; padding: 0 16px; }
     .updated-info { font-size: 12px; color: #64748b; margin-bottom: 16px; text-align: right; }
-
-    /* Time filter */
     .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
     .filter-label { font-size: 12px; color: #64748b; margin-right: 4px; }
     .time-btn { background: #1a1e2a; border: 1px solid #2a2e3d; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .time-btn:hover { border-color: #ff6b00; color: #ff6b00; }
     .time-btn.active { background: #ff6b00; border-color: #ff6b00; color: #fff; }
-
-    /* Sort bar */
     .sort-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
     .sort-btn { background: #1a1e2a; border: 1px solid #2a2e3d; color: #94a3b8; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
     .sort-btn:hover { border-color: #ff6b00; color: #ff6b00; }
     .sort-btn.active { background: #ff6b00; border-color: #ff6b00; color: #fff; }
-
-    /* Podium */
     .podium { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-bottom: 36px; }
     .podium-card { background: #1a1e2a; border-radius: 12px; padding: 24px 16px; text-align: center; flex: 1; max-width: 220px; border: 2px solid transparent; }
     .podium-card.rank-1 { border-color: #FFD700; transform: translateY(-14px); }
@@ -43,8 +37,6 @@
     .podium-val { font-size: 22px; font-weight: 800; color: #ff6b00; }
     .podium-label { font-size: 10px; color: #64748b; letter-spacing: 1px; margin-top: 3px; }
     .podium-sub { font-size: 11px; color: #475569; margin-top: 6px; }
-
-    /* Table */
     .table-wrap { overflow-x: auto; border-radius: 12px; }
     .leaderboard-table { width: 100%; border-collapse: collapse; background: #13161e; border-radius: 12px; overflow: hidden; min-width: 780px; }
     .leaderboard-table thead tr { background: #1a1e2a; border-bottom: 1px solid #2a2e3d; }
@@ -97,7 +89,7 @@
   <div class="updated-info" id="updatedAt"></div>
   <div class="info-banner">
     &#9432;&nbsp; Daten via <strong>Leetify</strong> &mdash; CS2 only. Zeitraum w&auml;hlbar.<br>
-    &#9432;&nbsp;<strong> Um angezeigt zu werden, muss man Leetify User sein. Das bedeutet Steam mit Leetify einmalig verbinden und Profil -> public.</strong>
+    &#9432;&nbsp;<strong> Um angezeigt zu werden, muss man Leetify User sein. Das bedeutet Steam mit Leetify einmalig verbinden und Profil -&gt; public.</strong>
   </div>
 
   <div class="filter-row">
@@ -139,9 +131,9 @@ const SORT_OPTIONS = [
   { key: "utility",       label: "Utility",         suffix: "",  fmt: function(v){ return v.toFixed(1); } },
   { key: "flashAssists",  label: "Flash Ast",       suffix: "",  fmt: function(v){ return v.toFixed(2); } },
   { key: "premierRank",   label: "Premier",         suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
-  { key: "clutch",       label: "Clutch",        suffix: "",  fmt: function(v){ return v.toFixed(3); } },
-  { key: "openingDuels", label: "Opening Duels",  suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "matches",      label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
+  { key: "clutch",        label: "Clutch",          suffix: "",  fmt: function(v){ return v.toFixed(3); } },
+  { key: "openingDuels",  label: "Opening Duels",   suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "matches",       label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
 ];
 
 var currentSort = "leetifyRating";
@@ -159,7 +151,6 @@ function setDays(d) {
   document.querySelectorAll(".time-btn").forEach(function(b){
     b.classList.toggle("active", parseInt(b.dataset.days) === d);
   });
-  // Re-fetch data for new time window
   loadAll();
 }
 
@@ -168,7 +159,6 @@ function cutoffDate() {
   d.setDate(d.getDate() - currentDays);
   return d;
 }
-
 
 async function fetchSteamData(steamId64) {
   try {
@@ -181,86 +171,62 @@ async function fetchSteamData(steamId64) {
 
 async function fetchPlayer(player) {
   try {
+    var steamData = await fetchSteamData(player.steamId64);
     var profile = await apiFetch("?steamId=" + player.steamId64);
 
-    // Real v3 field names from Leetify API
     var steamName  = profile.name || steamData.steamName || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
-    var steamData = await fetchSteamData(player.steamId64);
-    var avatar = steamData.avatar;
-    // Filter recent_matches by date window
+    var avatar     = steamData.avatar;
+
     var allMatches = profile.recent_matches || [];
     var cutoff = cutoffDate();
     var matches = allMatches.filter(function(g) {
       return g.finished_at && new Date(g.finished_at) >= cutoff;
     });
-    // If no matches in window, fall back to all recent matches
     var matchesForCalc = matches.length ? matches : allMatches;
 
-    // Overall stats from profile.stats and profile.rating
-    var stats   = profile.stats   || {};
-    var rating  = profile.rating  || {};
-    var ranks   = profile.ranks   || {};
+    var stats  = profile.stats  || {};
+    var rating = profile.rating || {};
+    var ranks  = profile.ranks  || {};
 
-    // Win rate: from filtered matches, or profile total
     var winRate = matchesForCalc.length
       ? (matchesForCalc.filter(function(m){ return m.outcome === "win"; }).length / matchesForCalc.length) * 100
       : (profile.winrate != null ? profile.winrate * 100 : null);
 
-    // Leetify Rating = ranks.leetify (the visible skill number like 2.12)
-    // For time-filtered view: average leetify_rating from filtered matches
     var lRatings = matchesForCalc.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
     var leetifyRating = ranks.leetify != null
       ? ranks.leetify
       : (lRatings.length ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length : null);
 
-    // HS% from profile.stats.accuracy_head
-    var hsPercent = stats.accuracy_head != null ? stats.accuracy_head : null;
+    var hsPercent    = stats.accuracy_head != null ? stats.accuracy_head : null;
+    var flashAssists = stats.flashbang_hit_foe_per_flashbang != null ? stats.flashbang_hit_foe_per_flashbang : null;
+    var matchCount   = matches.length;
 
-    // Flash assists per flashbang
-    var flashAssists = stats.flashbang_hit_foe_per_flashbang != null
-      ? stats.flashbang_hit_foe_per_flashbang : null;
-
-    // Show filtered match count, fallback to total
-    var matchCount = matches.length; // exact count in selected time window, 0 if none
-
-    // Opening duel success: average of CT and T side
     var ctOD = stats.ct_opening_duel_success_percentage != null ? stats.ct_opening_duel_success_percentage : null;
     var tOD  = stats.t_opening_duel_success_percentage  != null ? stats.t_opening_duel_success_percentage  : null;
-    var openingDuels = (ctOD != null && tOD != null) ? (ctOD + tOD) / 2
-                     : (ctOD != null ? ctOD : (tOD != null ? tOD : null));
+    var openingDuels = (ctOD != null && tOD != null) ? (ctOD + tOD) / 2 : (ctOD != null ? ctOD : (tOD != null ? tOD : null));
 
     return {
-      displayName:   player.displayName,
-      steamName:     steamName,
-      avatar:        avatar,
-      profileUrl:    profileUrl,
-      steamId64:     player.steamId64,
-      matches:       matchCount,
-      kd:            null,
-      hsPercent:     hsPercent,
-      winRate:       winRate,
-      adr:           null,
-      kills:         null,
-      leetifyRating: leetifyRating,
-      flashAssists:  flashAssists,
-      aim:           rating.aim           != null ? rating.aim           : null,
-      positioning:   rating.positioning   != null ? rating.positioning   : null,
-      utility:       rating.utility       != null ? rating.utility       : null,
-      premierRank:   ranks.premier        != null ? ranks.premier        : null,
-      clutch:        rating.clutch        != null ? rating.clutch        : null,
-      openingDuels:  openingDuels
+      displayName: player.displayName, steamName: steamName, avatar: avatar,
+      profileUrl: profileUrl, steamId64: player.steamId64, matches: matchCount,
+      kd: null, hsPercent: hsPercent, winRate: winRate, adr: null, kills: null,
+      leetifyRating: leetifyRating, flashAssists: flashAssists,
+      aim:          rating.aim         != null ? rating.aim         : null,
+      positioning:  rating.positioning != null ? rating.positioning : null,
+      utility:      rating.utility     != null ? rating.utility     : null,
+      premierRank:  ranks.premier      != null ? ranks.premier      : null,
+      clutch:       rating.clutch      != null ? rating.clutch      : null,
+      openingDuels: openingDuels
     };
   } catch(e) {
-    // Still try to get Steam avatar/name even if Leetify fails
     var fallbackSteam = await fetchSteamData(player.steamId64).catch(function(){ return { avatar: null, steamName: null }; });
-    return { displayName: player.displayName,
-      steamName: fallbackSteam.steamName || player.displayName,
+    return {
+      displayName: player.displayName, steamName: fallbackSteam.steamName || player.displayName,
       avatar: fallbackSteam.avatar, profileUrl: null, steamId64: player.steamId64,
-      matches: null, kd: null, hsPercent: null, winRate: null, adr: null,
-      kills: null, leetifyRating: null, flashAssists: null,
-      clutch: null, openingDuels: null, aim: null, positioning: null,
-      utility: null, premierRank: null, flashAssists: null, error: true };
+      matches: null, kd: null, hsPercent: null, winRate: null, adr: null, kills: null,
+      leetifyRating: null, flashAssists: null, clutch: null, openingDuels: null,
+      aim: null, positioning: null, utility: null, premierRank: null, error: true
+    };
   }
 }
 
@@ -270,8 +236,7 @@ async function loadAll() {
   btn.disabled = true; btn.innerHTML = "L&auml;dt...";
   container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Leetify-Daten...</p></div>';
   allPlayers = await Promise.all(PLAYERS.map(fetchPlayer));
-  document.getElementById("updatedAt").textContent =
-    "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
+  document.getElementById("updatedAt").textContent = "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
   buildSortBar();
   renderSorted();
   btn.disabled = false; btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
@@ -296,14 +261,22 @@ function fmtVal(player, key) {
 var MEDALS = ["&#129351;","&#129352;","&#129353;"];
 
 function renderSorted() {
+  // Sort: players with null for current key go to bottom
   var sorted = allPlayers.slice().sort(function(a, b) {
-    return (parseFloat(b[currentSort]) || 0) - (parseFloat(a[currentSort]) || 0);
+    var aVal = a[currentSort];
+    var bVal = b[currentSort];
+    var aNull = aVal == null || isNaN(parseFloat(aVal));
+    var bNull = bVal == null || isNaN(parseFloat(bVal));
+    if (aNull && bNull) return 0;
+    if (aNull) return 1;
+    if (bNull) return -1;
+    return parseFloat(bVal) - parseFloat(aVal);
   });
+
   var opt  = SORT_OPTIONS.find(function(o){ return o.key === currentSort; });
   var top3 = sorted.slice(0, 3);
   var order = top3.length === 3 ? [1, 0, 2] : top3.map(function(_, i){ return i; });
 
-  // Podium
   var podium = '<div class="podium">';
   order.forEach(function(i) {
     if (!top3[i]) return;
@@ -320,7 +293,6 @@ function renderSorted() {
   });
   podium += '</div>';
 
-  // Table headers
   var thDefs = [
     { key: null,            label: "#"              },
     { key: null,            label: "Spieler"        },
@@ -346,7 +318,6 @@ function renderSorted() {
       c.label + '<span class="arrow">' + arrow + '</span></th>';
   }).join("");
 
-  // Table rows
   var rows = "";
   sorted.forEach(function(p, idx) {
     var rc = ["r1","r2","r3"][idx] || "rn";
@@ -378,7 +349,6 @@ function renderSorted() {
     thead + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
-// Auth check first, then load data
 (async function init() {
   try {
     var r = await fetch("/api/auth");
