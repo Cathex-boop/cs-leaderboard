@@ -20,11 +20,13 @@ module.exports = async function handler(req, res) {
       }).on("error", reject);
     });
 
-    // Parse avatarFull from XML: <avatarFull>https://...</avatarFull>
-    const match = response.match(/<avatarFull><!\[CDATA\[(.*?)\]\]><\/avatarFull>/);
-    const avatar = match ? match[1] : null;
+    const avatarMatch = response.match(/<avatarFull><!\[CDATA\[(.*?)\]\]><\/avatarFull>/);
+    const nameMatch   = response.match(/<steamID><!\[CDATA\[(.*?)\]\]><\/steamID>/);
 
-    res.status(200).json({ avatar });
+    res.status(200).json({
+      avatar:    avatarMatch ? avatarMatch[1] : null,
+      steamName: nameMatch   ? nameMatch[1]   : null
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
