@@ -101,7 +101,8 @@
 
   <div class="filter-row">
     <span class="filter-label">Zeitraum:</span>
-    <button class="time-btn active" data-days="7"  onclick="setDays(7)">7 Tage</button>
+    <button class="time-btn active" data-days="1"  onclick="setDays(1)">24h</button>
+    <button class="time-btn" data-days="7"  onclick="setDays(7)">7 Tage</button>
     <button class="time-btn"        data-days="14" onclick="setDays(14)">14 Tage</button>
     <button class="time-btn"        data-days="30" onclick="setDays(30)">30 Tage</button>
     <button class="time-btn"        data-days="90" onclick="setDays(90)">90 Tage</button>
@@ -138,7 +139,7 @@ const SORT_OPTIONS = [
 ];
 
 var currentSort = "leetifyRating";
-var currentDays = 7;
+var currentDays = 1;
 var allPlayers  = [];
 
 async function apiFetch(query) {
@@ -280,7 +281,7 @@ function fmtVal(player, key) {
   return opt.fmt(raw) + (opt.suffix || "");
 }
 
-var MEDALS = ["&#128128; Most Lethal","&#129352;","&#129353;"];
+var MEDALS = ["&#129351;","&#129352;","&#129353;"];
 
 function renderSorted() {
   var sorted = allPlayers.slice().sort(function(a, b) {
