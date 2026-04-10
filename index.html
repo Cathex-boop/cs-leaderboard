@@ -132,7 +132,9 @@ const SORT_OPTIONS = [
   { key: "utility",       label: "Utility",         suffix: "",  fmt: function(v){ return v.toFixed(1); } },
   { key: "flashAssists",  label: "Flash Ast",       suffix: "",  fmt: function(v){ return v.toFixed(2); } },
   { key: "premierRank",   label: "Premier",         suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
-  { key: "matches",       label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
+  { key: "clutch",       label: "Clutch",        suffix: "",  fmt: function(v){ return v.toFixed(3); } },
+  { key: "openingDuels", label: "Opening Duels",  suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "matches",      label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
 ];
 
 var currentSort = "leetifyRating";
@@ -214,6 +216,12 @@ async function fetchPlayer(player) {
     // Show filtered match count, fallback to total
     var matchCount = matches.length ? matches.length : (profile.total_matches || null);
 
+    // Opening duel success: average of CT and T side
+    var ctOD = stats.ct_opening_duel_success_percentage != null ? stats.ct_opening_duel_success_percentage : null;
+    var tOD  = stats.t_opening_duel_success_percentage  != null ? stats.t_opening_duel_success_percentage  : null;
+    var openingDuels = (ctOD != null && tOD != null) ? (ctOD + tOD) / 2
+                     : (ctOD != null ? ctOD : (tOD != null ? tOD : null));
+
     return {
       displayName:   player.displayName,
       steamName:     steamName,
@@ -221,18 +229,19 @@ async function fetchPlayer(player) {
       profileUrl:    profileUrl,
       steamId64:     player.steamId64,
       matches:       matchCount,
-      kd:            null, // not in v3/profile endpoint
+      kd:            null,
       hsPercent:     hsPercent,
       winRate:       winRate,
-      adr:           null, // not in v3/profile endpoint
-      kills:         null, // not in v3/profile endpoint
+      adr:           null,
+      kills:         null,
       leetifyRating: leetifyRating,
       flashAssists:  flashAssists,
-      // Extra Leetify-specific fields
       aim:           rating.aim           != null ? rating.aim           : null,
       positioning:   rating.positioning   != null ? rating.positioning   : null,
       utility:       rating.utility       != null ? rating.utility       : null,
-      premierRank:   ranks.premier        != null ? ranks.premier        : null
+      premierRank:   ranks.premier        != null ? ranks.premier        : null,
+      clutch:        rating.clutch        != null ? rating.clutch        : null,
+      openingDuels:  openingDuels
     };
   } catch(e) {
     return { displayName: player.displayName, steamName: player.displayName,
@@ -311,6 +320,8 @@ function renderSorted() {
     { key: "utility",       label: "Utility"        },
     { key: "flashAssists",  label: "Flash Ast"      },
     { key: "premierRank",   label: "Premier"        },
+    { key: "clutch",        label: "Clutch"         },
+    { key: "openingDuels",  label: "Opening Duels"  },
     { key: null,            label: ""               }
   ];
 
@@ -342,6 +353,8 @@ function renderSorted() {
       '<td>' + fmtVal(p, "utility")      + '</td>' +
       '<td>' + fmtVal(p, "flashAssists") + '</td>' +
       '<td>' + fmtVal(p, "premierRank")  + '</td>' +
+      '<td>' + fmtVal(p, "clutch")       + '</td>' +
+      '<td>' + fmtVal(p, "openingDuels") + '</td>' +
       '<td>' + (p.profileUrl ? '<a class="ext-link" href="' + p.profileUrl + '" target="_blank">Leetify &#8599;</a>' : '') + '</td>' +
       '</tr>';
   });
