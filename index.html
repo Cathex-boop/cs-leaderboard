@@ -167,25 +167,27 @@ async function fetchPlayer(player) {
     var steamName  = profile.name || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
     var avatar     = null; // v3 profile has no avatar field — use Steam fallback
-    var cutoff     = cutoffDate();
-
     // Filter recent_matches by date window
     var allMatches = profile.recent_matches || [];
+    var cutoff = cutoffDate();
     var matches = allMatches.filter(function(g) {
       return g.finished_at && new Date(g.finished_at) >= cutoff;
     });
+    // If no matches in window, fall back to all recent matches
+    var matchesForCalc = matches.length ? matches : allMatches;
 
     // Overall stats from profile.stats and profile.rating
     var stats   = profile.stats   || {};
     var rating  = profile.rating  || {};
+    var ranks   = profile.ranks   || {};
 
-    // Win rate from profile (total) — or calculate from filtered matches
-    var winRate = matches.length
-      ? (matches.filter(function(m){ return m.outcome === "win"; }).length / matches.length) * 100
+    // Win rate: from filtered matches, or profile total
+    var winRate = matchesForCalc.length
+      ? (matchesForCalc.filter(function(m){ return m.outcome === "win"; }).length / matchesForCalc.length) * 100
       : (profile.winrate != null ? profile.winrate * 100 : null);
 
-    // Leetify rating: average over filtered matches
-    var lRatings = matches.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
+    // Leetify rating: average over matches, fallback to profile rating
+    var lRatings = matchesForCalc.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
     var leetifyRating = lRatings.length
       ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length
       : (rating.ct_leetify != null && rating.t_leetify != null
@@ -195,16 +197,12 @@ async function fetchPlayer(player) {
     // HS% from profile.stats.accuracy_head
     var hsPercent = stats.accuracy_head != null ? stats.accuracy_head : null;
 
-    // Flash assists per flashbang from stats
+    // Flash assists per flashbang
     var flashAssists = stats.flashbang_hit_foe_per_flashbang != null
       ? stats.flashbang_hit_foe_per_flashbang : null;
 
-    // Total matches in window
-    var matchCount = matches.length || profile.total_matches || null;
-
-    // ADR, K/D, kills not directly in v3/profile — show from rating scores instead
-    // Use aim/positioning/utility as proxy display, and ranks for context
-    var ranks = profile.ranks || {};
+    // Show filtered match count, fallback to total
+    var matchCount = matches.length ? matches.length : (profile.total_matches || null);
 
     return {
       displayName:   player.displayName,
@@ -239,19 +237,6 @@ async function loadAll() {
   var container = document.getElementById("container");
   btn.disabled = true; btn.innerHTML = "L&auml;dt...";
   container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Leetify-Daten...</p></div>';
-
-  // DEBUG: fetch raw API response for first player and show it
-  try {
-    var debugRes = await fetch("/api/leetify?path=" + encodeURIComponent("/v3/profile?steamId=" + PLAYERS[0].steamId64));
-    var debugJson = await debugRes.json();
-    console.log("RAW Leetify Response:", JSON.stringify(debugJson, null, 2));
-    // Show top-level keys in page for easy debugging
-    document.getElementById("updatedAt").textContent =
-      "DEBUG keys: " + Object.keys(debugJson).join(", ");
-  } catch(e) {
-    document.getElementById("updatedAt").textContent = "DEBUG error: " + e.message;
-  }
-
   allPlayers = await Promise.all(PLAYERS.map(fetchPlayer));
   document.getElementById("updatedAt").textContent =
     "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
