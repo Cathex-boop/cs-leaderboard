@@ -124,7 +124,7 @@ const PLAYERS = [
 ];
 
 const SORT_OPTIONS = [
-  { key: "leetifyRating", label: "Leetify Rating", suffix: "",  fmt: function(v){ return v.toFixed(3); } },
+  { key: "leetifyRating", label: "Leetify Rating", suffix: "",  fmt: function(v){ return v.toFixed(2); } },
   { key: "winRate",       label: "Win %",           suffix: "%", fmt: function(v){ return v.toFixed(1); } },
   { key: "hsPercent",     label: "HS %",            suffix: "%", fmt: function(v){ return v.toFixed(1); } },
   { key: "aim",           label: "Aim",             suffix: "",  fmt: function(v){ return v.toFixed(1); } },
@@ -150,13 +150,24 @@ function setDays(d) {
   document.querySelectorAll(".time-btn").forEach(function(b){
     b.classList.toggle("active", parseInt(b.dataset.days) === d);
   });
-  if (allPlayers.length) renderSorted();
+  // Re-fetch data for new time window
+  loadAll();
 }
 
 function cutoffDate() {
   var d = new Date();
   d.setDate(d.getDate() - currentDays);
   return d;
+}
+
+
+async function fetchSteamAvatar(steamId64) {
+  try {
+    var res = await fetch("/api/steam-avatar?steamId=" + steamId64);
+    if (!res.ok) return null;
+    var data = await res.json();
+    return data.avatar || null;
+  } catch(e) { return null; }
 }
 
 async function fetchPlayer(player) {
@@ -166,7 +177,7 @@ async function fetchPlayer(player) {
     // Real v3 field names from Leetify API
     var steamName  = profile.name || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
-    var avatar     = null; // v3 profile has no avatar field — use Steam fallback
+    var avatar = await fetchSteamAvatar(player.steamId64);
     // Filter recent_matches by date window
     var allMatches = profile.recent_matches || [];
     var cutoff = cutoffDate();
@@ -186,13 +197,12 @@ async function fetchPlayer(player) {
       ? (matchesForCalc.filter(function(m){ return m.outcome === "win"; }).length / matchesForCalc.length) * 100
       : (profile.winrate != null ? profile.winrate * 100 : null);
 
-    // Leetify rating: average over matches, fallback to profile rating
+    // Leetify Rating = ranks.leetify (the visible skill number like 2.12)
+    // For time-filtered view: average leetify_rating from filtered matches
     var lRatings = matchesForCalc.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
-    var leetifyRating = lRatings.length
-      ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length
-      : (rating.ct_leetify != null && rating.t_leetify != null
-          ? (rating.ct_leetify + rating.t_leetify) / 2
-          : null);
+    var leetifyRating = ranks.leetify != null
+      ? ranks.leetify
+      : (lRatings.length ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length : null);
 
     // HS% from profile.stats.accuracy_head
     var hsPercent = stats.accuracy_head != null ? stats.accuracy_head : null;
@@ -279,7 +289,7 @@ function renderSorted() {
     var dispVal = p[opt.key] != null ? opt.fmt(p[opt.key]) + (opt.suffix || "") : "&#8212;";
     podium += '<div class="podium-card rank-' + r + '">' +
       '<div class="podium-medal">' + (MEDALS[i] || "#" + r) + '</div>' +
-      (p.avatar ? '<img class="podium-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="podium-avatar"></div>') +
+      (p.avatar ? '<img class="podium-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="podium-avatar" style="display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:#ff6b00;background:#1a1e2a;">' + p.displayName.charAt(0).toUpperCase() + '</div>') +
       '<div class="podium-name">' + p.displayName + '</div>' +
       '<div class="podium-val">' + dispVal + '</div>' +
       '<div class="podium-label">' + opt.label.toUpperCase() + '</div>' +
@@ -319,7 +329,7 @@ function renderSorted() {
     rows += '<tr>' +
       '<td><div class="rank-badge ' + rc + '">' + (idx + 1) + '</div></td>' +
       '<td><div class="player-cell">' +
-        (p.avatar ? '<img class="player-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="player-avatar"></div>') +
+        (p.avatar ? '<img class="player-avatar" src="' + p.avatar + '" onerror="this.style.visibility=\'hidden\'"/>' : '<div class="player-avatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#ff6b00;background:#1a1e2a;">' + p.displayName.charAt(0).toUpperCase() + '</div>') +
         '<div><div class="player-name">' + p.displayName + '</div>' +
         (p.steamName && p.steamName !== p.displayName ? '<div class="player-steam">' + p.steamName + '</div>' : '') +
         '</div></div></td>' +
