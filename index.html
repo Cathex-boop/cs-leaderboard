@@ -239,6 +239,19 @@ async function loadAll() {
   var container = document.getElementById("container");
   btn.disabled = true; btn.innerHTML = "L&auml;dt...";
   container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Leetify-Daten...</p></div>';
+
+  // DEBUG: fetch raw API response for first player and show it
+  try {
+    var debugRes = await fetch("/api/leetify?path=" + encodeURIComponent("/v3/profile?steamId=" + PLAYERS[0].steamId64));
+    var debugJson = await debugRes.json();
+    console.log("RAW Leetify Response:", JSON.stringify(debugJson, null, 2));
+    // Show top-level keys in page for easy debugging
+    document.getElementById("updatedAt").textContent =
+      "DEBUG keys: " + Object.keys(debugJson).join(", ");
+  } catch(e) {
+    document.getElementById("updatedAt").textContent = "DEBUG error: " + e.message;
+  }
+
   allPlayers = await Promise.all(PLAYERS.map(fetchPlayer));
   document.getElementById("updatedAt").textContent =
     "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
