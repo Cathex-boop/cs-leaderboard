@@ -160,14 +160,19 @@ function cutoffDate() {
 
 async function fetchPlayer(player) {
   try {
-    var profile = await apiFetch("/api/profiles/" + player.steamId64);
-    var avatar     = profile.playerSummary && profile.playerSummary.avatarUrl || null;
-    var steamName  = profile.playerSummary && profile.playerSummary.name      || player.displayName;
+    var profile = await apiFetch("/v3/profile?steamId=" + player.steamId64);
+    // Support both v3 and legacy field names
+    var summary    = profile.playerSummary || profile.player || {};
+    var avatar     = summary.avatarUrl || summary.avatar || null;
+    var steamName  = summary.name || summary.steamName || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
     var cutoff     = cutoffDate();
 
-    var games = (profile.games || []).filter(function(g) {
-      return g.gameFinishedAt && new Date(g.gameFinishedAt) >= cutoff;
+    // v3: games may be under profile.games or profile.recentGames or profile.matches
+    var allGames = profile.games || profile.recentGames || profile.matches || [];
+    var games = allGames.filter(function(g) {
+      var date = g.gameFinishedAt || g.finishedAt || g.date || null;
+      return date && new Date(date) >= cutoff;
     });
 
     if (!games.length) {
@@ -181,14 +186,17 @@ async function fetchPlayer(player) {
     var totalDmg=0, totalRounds=0, totalLeetify=0, lCount=0, totalFlash=0;
 
     games.forEach(function(g) {
-      totalKills   += g.kills              || 0;
-      totalDeaths  += g.deaths             || 0;
-      totalHS      += g.hsKills            || 0;
-      if (g.won) totalWins++;
-      totalDmg     += (g.damagePerRound || 0) * (g.roundsPlayed || 20);
-      totalRounds  += g.roundsPlayed       || 20;
-      if (g.leetifyRating != null) { totalLeetify += g.leetifyRating; lCount++; }
-      totalFlash   += g.flashAssistsPerRound || 0;
+      totalKills   += g.kills   || g.totalKills  || 0;
+      totalDeaths  += g.deaths  || g.totalDeaths || 0;
+      totalHS      += g.hsKills || g.headshotKills || 0;
+      var won = g.won || g.isWin || g.result === "win" || false;
+      if (won) totalWins++;
+      var rounds = g.roundsPlayed || g.rounds || 20;
+      totalDmg    += (g.damagePerRound || g.adr || 0) * rounds;
+      totalRounds += rounds;
+      var lr = g.leetifyRating || g.rating || null;
+      if (lr != null) { totalLeetify += lr; lCount++; }
+      totalFlash  += g.flashAssistsPerRound || g.flashAssists || 0;
     });
 
     return {
