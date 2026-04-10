@@ -150,7 +150,7 @@ const SORT_MATCH = [
   { key: "hsPercent",     label: "HS %",          suffix: "%",  fmt: function(v){ return v.toFixed(1); } },
   { key: "accuracy",      label: "Accuracy",      suffix: "%",  fmt: function(v){ return v.toFixed(1); } },
   { key: "sprayAccuracy", label: "Spray",         suffix: "%",  fmt: function(v){ return v.toFixed(1); } },
-  { key: "reactionTime",  label: "Reaction ms",   suffix: "ms", fmt: function(v){ return Math.round(v); } }
+  { key: "reactionTime",  label: "Reaction ms",   suffix: "ms", fmt: function(v){ return Math.round(v); }, asc: true }
 ];
 
 // All-Time Modus: globale Profil-Werte
@@ -336,6 +336,7 @@ function fmtVal(player, key) {
 var MEDALS = ["&#129351;","&#129352;","&#129353;"];
 
 function renderSorted() {
+  var sortOpt = SORT_OPTIONS().find(function(o){ return o.key === currentSort; });
   var sorted = allPlayers.slice().sort(function(a, b) {
     var aVal = a[currentSort], bVal = b[currentSort];
     var aNull = aVal == null || isNaN(parseFloat(aVal));
@@ -343,7 +344,9 @@ function renderSorted() {
     if (aNull && bNull) return 0;
     if (aNull) return 1;
     if (bNull) return -1;
-    return parseFloat(bVal) - parseFloat(aVal);
+    return sortOpt && sortOpt.asc
+      ? parseFloat(aVal) - parseFloat(bVal)
+      : parseFloat(bVal) - parseFloat(aVal);
   });
 
   var opt  = SORT_OPTIONS().find(function(o){ return o.key === currentSort; });
@@ -398,8 +401,10 @@ function renderSorted() {
   var thead = thDefs.map(function(c) {
     if (!c.key) return '<th>' + c.label + '</th>';
     var active = currentSort === c.key;
+    var sortOptH = SORT_OPTIONS().find(function(o){ return o.key === c.key; });
+    var activeArrow = active ? (sortOptH && sortOptH.asc ? " &#9650;" : " &#9660;") : " &#8597;";
     return '<th class="' + (active ? "sorted" : "") + '" onclick="setSort(\'' + c.key + '\')">' +
-      c.label + '<span class="arrow">' + (active ? " &#9660;" : " &#8597;") + '</span></th>';
+      c.label + '<span class="arrow">' + activeArrow + '</span></th>';
   }).join("");
 
   var rows = "";
