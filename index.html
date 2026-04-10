@@ -139,8 +139,8 @@ var currentSort = "leetifyRating";
 var currentDays = 7;
 var allPlayers  = [];
 
-async function apiFetch(path) {
-  var res = await fetch("/api/leetify?path=" + encodeURIComponent(path));
+async function apiFetch(query) {
+  var res = await fetch("/api/leetify" + query);
   if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
@@ -161,7 +161,7 @@ function cutoffDate() {
 
 async function fetchPlayer(player) {
   try {
-    var profile = await apiFetch("/v3/profile?steamId=" + player.steamId64);
+    var profile = await apiFetch("?steamId=" + player.steamId64);
 
     // Real v3 field names from Leetify API
     var steamName  = profile.name || player.displayName;
