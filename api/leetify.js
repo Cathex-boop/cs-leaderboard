@@ -10,8 +10,8 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.LEETIFY_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "LEETIFY_API_KEY not set" });
 
-  // Correct Leetify base URL — path already includes /api/profiles/...
-  const url = "https://api.cs-prod.leetify.com" + path;
+  // Correct Leetify Public API base URL
+  const url = "https://api-public.cs-prod.leetify.com" + path;
 
   try {
     const response = await new Promise((resolve, reject) => {
@@ -31,10 +31,7 @@ module.exports = async function handler(req, res) {
 
     if (response.status >= 400) {
       res.status(response.status).json({
-        error: "Upstream error",
-        status: response.status,
-        url: url,
-        body: response.body
+        error: "Upstream error", status: response.status, url: url, body: response.body
       });
     } else {
       res.status(response.status).setHeader("Content-Type", "application/json").end(response.body);
