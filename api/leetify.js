@@ -4,25 +4,24 @@ const https = require("https");
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const path = req.query.path ? decodeURIComponent(req.query.path) : null;
-  if (!path) return res.status(400).json({ error: "Missing path" });
+  const steamId  = req.query.steamId;
+  const endpoint = req.query.endpoint || "profile";
+  if (!steamId) return res.status(400).json({ error: "Missing steamId" });
 
   const apiKey = process.env.LEETIFY_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "LEETIFY_API_KEY not set" });
 
-  // Correct Leetify Public API base URL
-  const url = "https://api-public.cs-prod.leetify.com" + path;
+  const url = "https://api-public.cs-prod.leetify.com/v3/" + endpoint + "?steamId=" + steamId;
 
   try {
     const response = await new Promise((resolve, reject) => {
-      const options = {
+      https.get(url, {
         headers: {
           "Authorization": "Bearer " + apiKey,
           "Content-Type": "application/json",
           "User-Agent": "CS2-Leaderboard/1.0"
         }
-      };
-      https.get(url, options, (apiRes) => {
+      }, (apiRes) => {
         let data = "";
         apiRes.on("data", chunk => data += chunk);
         apiRes.on("end", () => resolve({ status: apiRes.statusCode, body: data }));
@@ -30,13 +29,11 @@ module.exports = async function handler(req, res) {
     });
 
     if (response.status >= 400) {
-      res.status(response.status).json({
-        error: "Upstream error", status: response.status, url: url, body: response.body
-      });
+      res.status(response.status).json({ error: "Upstream error", status: response.status, url, body: response.body });
     } else {
-      res.status(response.status).setHeader("Content-Type", "application/json").end(response.body);
+      res.status(200).setHeader("Content-Type", "application/json").end(response.body);
     }
   } catch (e) {
-    res.status(500).json({ error: e.message, url: url });
+    res.status(500).json({ error: e.message, url });
   }
 };
