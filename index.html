@@ -66,6 +66,13 @@
     .spinner { width: 40px; height: 40px; border: 3px solid #2a2e3d; border-top-color: #ff6b00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .info-banner { background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #94a3b8; }
+
+    /* Mode toggle */
+    .mode-toggle { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #2a2e3d; width: fit-content; }
+    .mode-btn { background: #1a1e2a; border: none; color: #94a3b8; padding: 8px 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+    .mode-btn.active { background: #ff6b00; color: #fff; }
+    .mode-btn:hover:not(.active) { color: #ff6b00; }
+    .mode-label { font-size: 11px; color: #475569; margin-bottom: 8px; }
     .attribution { text-align: center; margin-top: 32px; font-size: 12px; color: #475569; }
     .attribution a { color: #ff6b00; text-decoration: none; }
     @media (max-width: 600px) {
@@ -101,6 +108,11 @@
     <button class="time-btn"        data-days="90" onclick="setDays(90)">90 Tage</button>
   </div>
 
+  <div class="mode-label">Ansicht:</div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeMatch"   onclick="setMode('match')">&#9654; Match-Modus &nbsp;<small>(Zeitraum-gefiltert)</small></button>
+    <button class="mode-btn"        id="modeAlltime" onclick="setMode('alltime')">&#9733; All-Time Ratings</button>
+  </div>
   <div class="sort-bar" id="sortBar"></div>
 
   <div id="container">
@@ -122,19 +134,28 @@ const PLAYERS = [
     { steamId64: "76561199208386886", displayName: "Zven"  }
 ];
 
-const SORT_OPTIONS = [
-  { key: "leetifyRating", label: "Leetify Rating", suffix: "",  fmt: function(v){ return v.toFixed(2); } },
-  { key: "winRate",       label: "Win %",           suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "hsPercent",     label: "HS %",            suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "aim",           label: "Aim",             suffix: "",  fmt: function(v){ return v.toFixed(1); } },
-  { key: "positioning",   label: "Positioning",     suffix: "",  fmt: function(v){ return v.toFixed(1); } },
-  { key: "utility",       label: "Utility",         suffix: "",  fmt: function(v){ return v.toFixed(1); } },
-  { key: "flashAssists",  label: "Flash Ast",       suffix: "",  fmt: function(v){ return v.toFixed(2); } },
-  { key: "premierRank",   label: "Premier",         suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
-  { key: "clutch",        label: "Clutch",          suffix: "",  fmt: function(v){ return v.toFixed(3); } },
-  { key: "openingDuels",  label: "Opening Duels",   suffix: "%", fmt: function(v){ return v.toFixed(1); } },
-  { key: "matches",       label: "Matches",         suffix: "",  fmt: function(v){ return v; } }
+const SORT_MATCH = [
+  { key: "matches",       label: "Matches",       suffix: "",  fmt: function(v){ return v; } },
+  { key: "leetifyRating", label: "Leetify Rating",suffix: "",  fmt: function(v){ return v.toFixed(2); } },
+  { key: "winRate",       label: "Win %",         suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "hsPercent",     label: "HS %",          suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "accuracy",      label: "Accuracy",      suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "sprayAccuracy", label: "Spray",         suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "reactionTime",  label: "Reaction Time", suffix: "ms",fmt: function(v){ return Math.round(v); } }
 ];
+const SORT_ALLTIME = [
+  { key: "leetifyRating", label: "Leetify Rating",suffix: "",  fmt: function(v){ return v.toFixed(2); } },
+  { key: "aim",           label: "Aim",           suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "positioning",   label: "Positioning",   suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "utility",       label: "Utility",       suffix: "",  fmt: function(v){ return v.toFixed(1); } },
+  { key: "clutch",        label: "Clutch",        suffix: "",  fmt: function(v){ return v.toFixed(3); } },
+  { key: "openingDuels",  label: "Opening Duels", suffix: "%", fmt: function(v){ return v.toFixed(1); } },
+  { key: "flashAssists",  label: "Flash Ast",     suffix: "",  fmt: function(v){ return v.toFixed(2); } },
+  { key: "premierRank",   label: "Premier",       suffix: "",  fmt: function(v){ return Math.round(v).toLocaleString("de-DE"); } },
+  { key: "winRate",       label: "Win % (all)",   suffix: "%", fmt: function(v){ return v.toFixed(1); } }
+];
+var currentMode = "match";
+function SORT_OPTIONS() { return currentMode === "match" ? SORT_MATCH : SORT_ALLTIME; }
 
 var currentSort = "leetifyRating";
 var currentDays = 1;
@@ -144,6 +165,16 @@ async function apiFetch(query) {
   var res = await fetch("/api/leetify" + query);
   if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById("modeMatch").classList.toggle("active",   mode === "match");
+  document.getElementById("modeAlltime").classList.toggle("active", mode === "alltime");
+  // Reset sort to first option of new mode
+  currentSort = SORT_OPTIONS()[0].key;
+  buildSortBar();
+  renderSorted();
 }
 
 function setDays(d) {
@@ -202,6 +233,16 @@ async function fetchPlayer(player) {
     var flashAssists = stats.flashbang_hit_foe_per_flashbang != null ? stats.flashbang_hit_foe_per_flashbang : null;
     var matchCount   = matches.length;
 
+    // Match-mode fields: average over filtered matches (or all recent if none in window)
+    var calcMatches = matchesForCalc;
+    function avgField(arr, key) {
+      var vals = arr.map(function(m){ return m[key]; }).filter(function(v){ return v != null; });
+      return vals.length ? vals.reduce(function(a,b){ return a+b; }, 0) / vals.length : null;
+    }
+    var accuracy     = avgField(calcMatches, "accuracy_enemy_spotted");
+    var sprayAccuracy = avgField(calcMatches, "spray_accuracy");
+    var reactionTime  = avgField(calcMatches, "reaction_time_ms");
+
     var ctOD = stats.ct_opening_duel_success_percentage != null ? stats.ct_opening_duel_success_percentage : null;
     var tOD  = stats.t_opening_duel_success_percentage  != null ? stats.t_opening_duel_success_percentage  : null;
     var openingDuels = (ctOD != null && tOD != null) ? (ctOD + tOD) / 2 : (ctOD != null ? ctOD : (tOD != null ? tOD : null));
@@ -216,7 +257,10 @@ async function fetchPlayer(player) {
       utility:      rating.utility     != null ? rating.utility     : null,
       premierRank:  ranks.premier      != null ? ranks.premier      : null,
       clutch:       rating.clutch      != null ? rating.clutch      : null,
-      openingDuels: openingDuels
+      openingDuels: openingDuels,
+      accuracy:     accuracy,
+      sprayAccuracy: sprayAccuracy,
+      reactionTime:  reactionTime
     };
   } catch(e) {
     var fallbackSteam = await fetchSteamData(player.steamId64).catch(function(){ return { avatar: null, steamName: null }; });
@@ -225,7 +269,7 @@ async function fetchPlayer(player) {
       avatar: fallbackSteam.avatar, profileUrl: null, steamId64: player.steamId64,
       matches: null, kd: null, hsPercent: null, winRate: null, adr: null, kills: null,
       leetifyRating: null, flashAssists: null, clutch: null, openingDuels: null,
-      aim: null, positioning: null, utility: null, premierRank: null, error: true
+      aim: null, positioning: null, utility: null, premierRank: null, accuracy: null, sprayAccuracy: null, reactionTime: null, error: true
     };
   }
 }
@@ -252,7 +296,7 @@ function buildSortBar() {
 function setSort(key) { currentSort = key; buildSortBar(); renderSorted(); }
 
 function fmtVal(player, key) {
-  var opt = SORT_OPTIONS.find(function(o){ return o.key === key; });
+  var opt = SORT_OPTIONS().find(function(o){ return o.key === key; });
   var raw = player[key];
   if (raw == null) return '<span class="null-val">&#8212;</span>';
   return opt.fmt(raw) + (opt.suffix || "");
@@ -273,7 +317,7 @@ function renderSorted() {
     return parseFloat(bVal) - parseFloat(aVal);
   });
 
-  var opt  = SORT_OPTIONS.find(function(o){ return o.key === currentSort; });
+  var opt  = SORT_OPTIONS().find(function(o){ return o.key === currentSort; });
   var top3 = sorted.slice(0, 3);
   var order = top3.length === 3 ? [1, 0, 2] : top3.map(function(_, i){ return i; });
 
@@ -293,20 +337,29 @@ function renderSorted() {
   });
   podium += '</div>';
 
-  var thDefs = [
+  var thDefs = currentMode === "match" ? [
     { key: null,            label: "#"              },
     { key: null,            label: "Spieler"        },
     { key: "matches",       label: "Matches"        },
     { key: "leetifyRating", label: "Leetify Rating" },
     { key: "winRate",       label: "Win %"          },
     { key: "hsPercent",     label: "HS %"           },
+    { key: "accuracy",      label: "Accuracy"       },
+    { key: "sprayAccuracy", label: "Spray"          },
+    { key: "reactionTime",  label: "Reaction Time"  },
+    { key: null,            label: ""               }
+  ] : [
+    { key: null,            label: "#"              },
+    { key: null,            label: "Spieler"        },
+    { key: "leetifyRating", label: "Leetify Rating" },
     { key: "aim",           label: "Aim"            },
     { key: "positioning",   label: "Positioning"    },
     { key: "utility",       label: "Utility"        },
-    { key: "flashAssists",  label: "Flash Ast"      },
-    { key: "premierRank",   label: "Premier"        },
     { key: "clutch",        label: "Clutch"         },
     { key: "openingDuels",  label: "Opening Duels"  },
+    { key: "flashAssists",  label: "Flash Ast"      },
+    { key: "premierRank",   label: "Premier"        },
+    { key: "winRate",       label: "Win % (all)"    },
     { key: null,            label: ""               }
   ];
 
@@ -328,17 +381,24 @@ function renderSorted() {
         '<div><div class="player-name">' + p.displayName + '</div>' +
         (p.steamName && p.steamName !== p.displayName ? '<div class="player-steam">' + p.steamName + '</div>' : '') +
         '</div></div></td>' +
-      '<td>' + (p.matches != null ? '<span class="matches-badge">' + p.matches + '</span>' : '<span class="null-val">&#8212;</span>') + '</td>' +
+      (currentMode === 'match' ? '<td>' + (p.matches != null ? '<span class="matches-badge">' + p.matches + '</span>' : '<span class="null-val">&#8212;</span>') + '</td>' : '') +
       '<td><span class="hi-val">' + fmtVal(p, "leetifyRating") + '</span></td>' +
-      '<td>' + fmtVal(p, "winRate")      + '</td>' +
-      '<td>' + fmtVal(p, "hsPercent")    + '</td>' +
-      '<td>' + fmtVal(p, "aim")          + '</td>' +
-      '<td>' + fmtVal(p, "positioning")  + '</td>' +
-      '<td>' + fmtVal(p, "utility")      + '</td>' +
-      '<td>' + fmtVal(p, "flashAssists") + '</td>' +
-      '<td>' + fmtVal(p, "premierRank")  + '</td>' +
-      '<td>' + fmtVal(p, "clutch")       + '</td>' +
-      '<td>' + fmtVal(p, "openingDuels") + '</td>' +
+      (currentMode === "match" ? (
+        '<td>' + fmtVal(p, "winRate")      + '</td>' +
+        '<td>' + fmtVal(p, "hsPercent")    + '</td>' +
+        '<td>' + fmtVal(p, "accuracy")     + '</td>' +
+        '<td>' + fmtVal(p, "sprayAccuracy")+ '</td>' +
+        '<td>' + fmtVal(p, "reactionTime") + '</td>'
+      ) : (
+        '<td>' + fmtVal(p, "aim")          + '</td>' +
+        '<td>' + fmtVal(p, "positioning")  + '</td>' +
+        '<td>' + fmtVal(p, "utility")      + '</td>' +
+        '<td>' + fmtVal(p, "clutch")       + '</td>' +
+        '<td>' + fmtVal(p, "openingDuels") + '</td>' +
+        '<td>' + fmtVal(p, "flashAssists") + '</td>' +
+        '<td>' + fmtVal(p, "premierRank")  + '</td>' +
+        '<td>' + fmtVal(p, "winRate")      + '</td>'
+      )) +
       '<td>' + (p.profileUrl ? '<a class="ext-link" href="' + p.profileUrl + '" target="_blank">Leetify &#8599;</a>' : '') + '</td>' +
       '</tr>';
   });
