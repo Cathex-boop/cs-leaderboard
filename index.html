@@ -87,7 +87,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">GOONER-BOARD</span>
+      <span class="logo-lb">GONNER-BOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadAll()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
@@ -96,7 +96,7 @@
 <main>
   <div class="updated-info" id="updatedAt"></div>
   <div class="info-banner">
-    &#9432;&nbsp; Daten via <strong>Leetify</strong> &mdash;Zeitraum w&auml;hlbar. <strong>Um angezeigt zu werden, muss ein mit Steam verknüpfter Leetify Account vorhanden sein.</strong>
+    &#9432;&nbsp; Daten via <strong>Leetify</strong> &mdash; CS2 only. Zeitraum w&auml;hlbar.
   </div>
 
   <div class="filter-row">
@@ -169,13 +169,13 @@ function cutoffDate() {
 }
 
 
-async function fetchSteamAvatar(steamId64) {
+async function fetchSteamData(steamId64) {
   try {
     var res = await fetch("/api/steam-avatar?steamId=" + steamId64);
-    if (!res.ok) return null;
+    if (!res.ok) return { avatar: null, steamName: null };
     var data = await res.json();
-    return data.avatar || null;
-  } catch(e) { return null; }
+    return { avatar: data.avatar || null, steamName: data.steamName || null };
+  } catch(e) { return { avatar: null, steamName: null }; }
 }
 
 async function fetchPlayer(player) {
@@ -183,9 +183,10 @@ async function fetchPlayer(player) {
     var profile = await apiFetch("?steamId=" + player.steamId64);
 
     // Real v3 field names from Leetify API
-    var steamName  = profile.name || player.displayName;
+    var steamName  = profile.name || steamData.steamName || player.displayName;
     var profileUrl = "https://leetify.com/app/profile/" + player.steamId64;
-    var avatar = await fetchSteamAvatar(player.steamId64);
+    var steamData = await fetchSteamData(player.steamId64);
+    var avatar = steamData.avatar;
     // Filter recent_matches by date window
     var allMatches = profile.recent_matches || [];
     var cutoff = cutoffDate();
@@ -250,10 +251,15 @@ async function fetchPlayer(player) {
       openingDuels:  openingDuels
     };
   } catch(e) {
-    return { displayName: player.displayName, steamName: player.displayName,
-      avatar: null, profileUrl: null, steamId64: player.steamId64,
+    // Still try to get Steam avatar/name even if Leetify fails
+    var fallbackSteam = await fetchSteamData(player.steamId64).catch(function(){ return { avatar: null, steamName: null }; });
+    return { displayName: player.displayName,
+      steamName: fallbackSteam.steamName || player.displayName,
+      avatar: fallbackSteam.avatar, profileUrl: null, steamId64: player.steamId64,
       matches: null, kd: null, hsPercent: null, winRate: null, adr: null,
-      kills: null, leetifyRating: null, flashAssists: null, error: true };
+      kills: null, leetifyRating: null, flashAssists: null,
+      clutch: null, openingDuels: null, aim: null, positioning: null,
+      utility: null, premierRank: null, flashAssists: null, error: true };
   }
 }
 
