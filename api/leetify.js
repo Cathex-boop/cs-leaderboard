@@ -4,14 +4,14 @@ const https = require("https");
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const steamId  = req.query.steamId;
-  const endpoint = req.query.endpoint || "profile";
-  if (!steamId) return res.status(400).json({ error: "Missing steamId" });
+  const steamId = req.query.steamId;
+  if (!steamId) return res.status(400).json({ error: "Missing steamId", query: req.query });
 
   const apiKey = process.env.LEETIFY_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "LEETIFY_API_KEY not set" });
 
-  const url = "https://api-public.cs-prod.leetify.com/v3/" + endpoint + "?steamId=" + steamId;
+  // Correct param name per Leetify Swagger: steam64_id
+  const url = "https://api-public.cs-prod.leetify.com/v3/profile?steam64_id=" + steamId;
 
   try {
     const response = await new Promise((resolve, reject) => {
