@@ -225,7 +225,10 @@ async function fetchPlayer(player) {
     var matches    = allMatches.filter(function(g) {
       return g.finished_at && new Date(g.finished_at) >= cutoff;
     });
+    // matchesForCalc: used ONLY for winRate/leetifyRating fallback when no matches in window
+    // For all other match-stats: use only filtered matches — null if 0 matches
     var matchesForCalc = matches.length ? matches : allMatches;
+    var matchesStrict  = matches; // strictly filtered — no fallback
 
     var stats  = profile.stats  || {};
     var rating = profile.rating || {};
@@ -237,29 +240,25 @@ async function fetchPlayer(player) {
       : (profile.winrate != null ? profile.winrate * 100 : null);
 
     // Leetify rating: match-filtered average vs all-time profile value
-    var lRatings = matches.length
-      ? matches.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; })
-      : [];
+    var lRatings = matchesStrict.map(function(m){ return m.leetify_rating; }).filter(function(v){ return v != null; });
     var leetifyRatingMatch   = lRatings.length
       ? lRatings.reduce(function(a,b){ return a+b; }, 0) / lRatings.length
       : null;
     var leetifyRatingAlltime = ranks.leetify != null ? ranks.leetify : null;
     var leetifyRating        = leetifyRatingMatch != null ? leetifyRatingMatch : leetifyRatingAlltime;
 
-    // HS% from filtered matches
-    var hsVals = matchesForCalc.map(function(m){ return m.accuracy_head; }).filter(function(v){ return v != null; });
-    var hsPercent = hsVals.length
-      ? hsVals.reduce(function(a,b){ return a+b; }, 0) / hsVals.length
-      : (stats.accuracy_head != null ? stats.accuracy_head : null);
+    // HS% strictly from filtered matches only (null if 0 matches in window)
+    var hsVals = matchesStrict.map(function(m){ return m.accuracy_head; }).filter(function(v){ return v != null; });
+    var hsPercent = hsVals.length ? hsVals.reduce(function(a,b){ return a+b; }, 0) / hsVals.length : null;
 
     // Match-mode: per-match averages
     function avgField(arr, key) {
       var vals = arr.map(function(m){ return m[key]; }).filter(function(v){ return v != null; });
       return vals.length ? vals.reduce(function(a,b){ return a+b; }, 0) / vals.length : null;
     }
-    var accuracy      = avgField(matchesForCalc, "accuracy_enemy_spotted");
-    var sprayAccuracy = avgField(matchesForCalc, "spray_accuracy");
-    var reactionTime  = avgField(matchesForCalc, "reaction_time_ms");
+    var accuracy      = avgField(matchesStrict, "accuracy_enemy_spotted");
+    var sprayAccuracy = avgField(matchesStrict, "spray_accuracy");
+    var reactionTime  = avgField(matchesStrict, "reaction_time_ms");
 
     // Opening duel success (all-time from stats)
     var ctOD = stats.ct_opening_duel_success_percentage != null ? stats.ct_opening_duel_success_percentage : null;
