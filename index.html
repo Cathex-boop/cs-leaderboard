@@ -342,17 +342,16 @@ function renderSorted() {
     thead + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
-loadAll();
-
-  // Auth check — redirect to login if not authenticated
-  (async function checkAuth() {
-    try {
-      var r = await fetch("/api/auth");
-      if (!r.ok) window.location.href = "/login";
-    } catch(e) {
-      window.location.href = "/login";
-    }
-  })();
+// Auth check first, then load data
+(async function init() {
+  try {
+    var r = await fetch("/api/auth");
+    if (!r.ok) { window.location.href = "/login"; return; }
+    loadAll();
+  } catch(e) {
+    window.location.href = "/login";
+  }
+})();
 </script>
 </body>
 </html>
