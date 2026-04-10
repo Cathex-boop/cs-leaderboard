@@ -78,6 +78,46 @@
     .spinner { width: 40px; height: 40px; border: 3px solid #2a2e3d; border-top-color: #ff6b00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .info-banner { background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #94a3b8; }
+
+    /* Trend indicators */
+    .trend-up   { color: #22c55e; font-size: 11px; margin-left: 4px; }
+    .trend-down { color: #ef4444; font-size: 11px; margin-left: 4px; }
+    .trend-neu  { color: #64748b; font-size: 11px; margin-left: 4px; }
+
+    /* Min-matches filter */
+    .minmatch-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .minmatch-label { font-size: 12px; color: #64748b; }
+    .minmatch-btn { background: #1a1e2a; border: 1px solid #2a2e3d; color: #94a3b8; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .minmatch-btn:hover { border-color: #ff6b00; color: #ff6b00; }
+    .minmatch-btn.active { background: #ff6b00; border-color: #ff6b00; color: #fff; }
+
+    /* Auto-refresh countdown */
+    .refresh-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .countdown-badge { font-size: 11px; color: #475569; background: #1a1e2a; border: 1px solid #2a2e3d; border-radius: 6px; padding: 4px 10px; }
+    .countdown-badge span { color: #ff6b00; font-weight: 700; }
+
+    /* Match history tooltip */
+    .matches-wrap { position: relative; display: inline-block; cursor: pointer; }
+    .match-tooltip { display: none; position: absolute; top: 110%; left: 50%; transform: translateX(-50%);
+      background: #1a1e2a; border: 1px solid #2a2e3d; border-radius: 8px; padding: 8px 12px;
+      z-index: 100; min-width: 160px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .matches-wrap:hover .match-tooltip { display: block; }
+    .match-tooltip-row { font-size: 11px; padding: 2px 0; display: flex; justify-content: space-between; gap: 12px; color: #94a3b8; }
+    .match-tooltip-row .win  { color: #22c55e; font-weight: 700; }
+    .match-tooltip-row .loss { color: #ef4444; font-weight: 700; }
+    .match-tooltip-row .draw { color: #f59e0b; font-weight: 700; }
+
+    /* Row hover highlight */
+    .leaderboard-table tbody tr { transition: background 0.15s; }
+    .leaderboard-table tbody tr:hover td { background: rgba(255,107,0,0.06); }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: #1a1e2a; border: 1px solid #2a2e3d; border-left: 3px solid #ef4444; color: #94a3b8;
+      font-size: 12px; padding: 10px 14px; border-radius: 8px; max-width: 280px;
+      animation: slideIn 0.3s ease; }
+    .toast.success { border-left-color: #22c55e; }
+    @keyframes slideIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
     .attribution { text-align: center; margin-top: 32px; font-size: 12px; color: #475569; }
     .attribution a { color: #ff6b00; text-decoration: none; }
     @media (max-width: 600px) {
@@ -91,7 +131,7 @@
   <div class="header-inner">
     <div class="logo">
       <span class="logo-cs">CS2</span>
-      <span class="logo-lb">GOONER-BOARD</span>
+      <span class="logo-lb">GONNER-BOARD</span>
     </div>
     <button id="refreshBtn" onclick="loadAll()">&#x21BB;&nbsp;Aktualisieren</button>
   </div>
@@ -111,6 +151,22 @@
     <button class="time-btn" data-days="14" onclick="setDays(14)">14 Tage</button>
     <button class="time-btn" data-days="30" onclick="setDays(30)">30 Tage</button>
     <button class="time-btn" data-days="90" onclick="setDays(90)">90 Tage</button>
+  </div>
+
+  <div class="refresh-row">
+    <div class="countdown-badge">Auto-Refresh in <span id="countdownVal">300</span>s</div>
+    <label style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" id="autoRefreshToggle" checked style="accent-color:#ff6b00;cursor:pointer;"> aktiviert
+    </label>
+  </div>
+
+  <div class="minmatch-row">
+    <span class="minmatch-label">Mindest-Matches:</span>
+    <button class="minmatch-btn active" data-min="0" onclick="setMinMatches(0)">Alle</button>
+    <button class="minmatch-btn" data-min="1" onclick="setMinMatches(1)">&ge; 1</button>
+    <button class="minmatch-btn" data-min="2" onclick="setMinMatches(2)">&ge; 2</button>
+    <button class="minmatch-btn" data-min="3" onclick="setMinMatches(3)">&ge; 3</button>
+    <button class="minmatch-btn" data-min="5" onclick="setMinMatches(5)">&ge; 5</button>
   </div>
 
   <div class="mode-row">
@@ -166,10 +222,15 @@ const SORT_ALLTIME = [
   { key: "winRate",       label: "Win % (all)",   suffix: "%",  fmt: function(v){ return v.toFixed(1); } }
 ];
 
-var currentMode = "match";
-var currentSort = "leetifyRating";
-var currentDays = 1;
-var allPlayers  = [];
+var currentMode    = localStorage.getItem("gg_mode")    || "match";
+var currentSort    = localStorage.getItem("gg_sort")    || "leetifyRating";
+var currentDays    = parseInt(localStorage.getItem("gg_days") || "1");
+var currentMinMatch= parseInt(localStorage.getItem("gg_min")  || "0");
+var allPlayers     = [];
+var prevPlayers    = {};   // steamId64 -> stats snapshot for trend
+var autoRefreshTimer = null;
+var countdownInterval = null;
+var REFRESH_SECONDS = 300;
 
 function SORT_OPTIONS() { return currentMode === "match" ? SORT_MATCH : SORT_ALLTIME; }
 
@@ -181,17 +242,29 @@ async function apiFetch(query) {
 
 function setDays(d) {
   currentDays = d;
+  localStorage.setItem("gg_days", d);
   document.querySelectorAll(".time-btn").forEach(function(b){
     b.classList.toggle("active", parseInt(b.dataset.days) === d);
   });
   loadAll();
 }
 
+function setMinMatches(n) {
+  currentMinMatch = n;
+  localStorage.setItem("gg_min", n);
+  document.querySelectorAll(".minmatch-btn").forEach(function(b){
+    b.classList.toggle("active", parseInt(b.dataset.min) === n);
+  });
+  renderSorted();
+}
+
 function setMode(mode) {
   currentMode = mode;
+  localStorage.setItem("gg_mode", mode);
   document.getElementById("modeMatch").classList.toggle("active",   mode === "match");
   document.getElementById("modeAlltime").classList.toggle("active", mode === "alltime");
   currentSort = SORT_OPTIONS()[0].key;
+  localStorage.setItem("gg_sort", currentSort);
   buildSortBar();
   renderSorted();
 }
@@ -273,6 +346,7 @@ async function fetchPlayer(player) {
       profileUrl:    profileUrl,
       steamId64:     player.steamId64,
       matches:            matches.length,
+      _matches:           matches,
       winRate:            winRate,
       leetifyRating:      leetifyRating,
       leetifyRatingMatch: leetifyRatingMatch,
@@ -307,12 +381,15 @@ async function loadAll() {
   var container = document.getElementById("container");
   btn.disabled = true; btn.innerHTML = "L&auml;dt...";
   container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Lade Leetify-Daten...</p></div>';
+  // Save previous snapshot for trend calculation
+  allPlayers.forEach(function(p){ prevPlayers[p.steamId64] = p; });
   allPlayers = await Promise.all(PLAYERS.map(fetchPlayer));
   document.getElementById("updatedAt").textContent =
     "Zuletzt aktualisiert: " + new Date().toLocaleString("de-DE");
   buildSortBar();
   renderSorted();
   btn.disabled = false; btn.innerHTML = "&#x21BB;&nbsp;Aktualisieren";
+  startAutoRefresh();
 }
 
 function buildSortBar() {
@@ -322,7 +399,7 @@ function buildSortBar() {
   }).join("");
 }
 
-function setSort(key) { currentSort = key; buildSortBar(); renderSorted(); }
+function setSort(key) { currentSort = key; localStorage.setItem('gg_sort', key); buildSortBar(); renderSorted(); }
 
 function fmtVal(player, key) {
   var opt = SORT_OPTIONS().find(function(o){ return o.key === key; });
@@ -332,11 +409,53 @@ function fmtVal(player, key) {
   return opt.fmt(raw) + (opt.suffix || "");
 }
 
+
+function showToast(msg, type) {
+  var c = document.getElementById("toast-container");
+  var t = document.createElement("div");
+  t.className = "toast" + (type === "success" ? " success" : "");
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 4000);
+}
+
+function startAutoRefresh() {
+  clearInterval(autoRefreshTimer);
+  clearInterval(countdownInterval);
+  var remaining = REFRESH_SECONDS;
+  var el = document.getElementById("countdownVal");
+  if(el) el.textContent = remaining;
+  countdownInterval = setInterval(function(){
+    remaining--;
+    if(el) el.textContent = remaining;
+    if(remaining <= 0) {
+      remaining = REFRESH_SECONDS;
+      var tog = document.getElementById("autoRefreshToggle");
+      if(tog && tog.checked) loadAll();
+    }
+  }, 1000);
+}
+
+function trendHtml(player, key) {
+  var prev = prevPlayers[player.steamId64];
+  if (!prev || prev[key] == null || player[key] == null) return '<span class="trend-neu">new</span>';
+  var diff = player[key] - prev[key];
+  var opt  = SORT_OPTIONS().find(function(o){ return o.key === key; });
+  var better = opt && opt.asc ? diff < 0 : diff > 0;
+  var worse  = opt && opt.asc ? diff > 0 : diff < 0;
+  if (Math.abs(diff) < 0.001) return '';
+  if (better) return '<span class="trend-up">&#9650;</span>';
+  if (worse)  return '<span class="trend-down">&#9660;</span>';
+  return '';
+}
 var MEDALS = ["&#129351;","&#129352;","&#129353;"];
 
 function renderSorted() {
+  var visible = currentMinMatch > 0
+    ? allPlayers.filter(function(p){ return (p.matches || 0) >= currentMinMatch; })
+    : allPlayers;
   var sortOpt = SORT_OPTIONS().find(function(o){ return o.key === currentSort; });
-  var sorted = allPlayers.slice().sort(function(a, b) {
+  var sorted = visible.slice().sort(function(a, b) {
     var aVal = a[currentSort], bVal = b[currentSort];
     var aNull = aVal == null || isNaN(parseFloat(aVal));
     var bNull = bVal == null || isNaN(parseFloat(bVal));
@@ -410,8 +529,20 @@ function renderSorted() {
   sorted.forEach(function(p, idx) {
     var rc = ["r1","r2","r3"][idx] || "rn";
     var dataCells = currentMode === "match"
-      ? '<td>' + (p.matches != null ? '<span class="matches-badge">' + p.matches + '</span>' : '<span class="null-val">&#8212;</span>') + '</td>' +
-        '<td><span class="hi-val">' + fmtVal(p, "leetifyRating") + '</span></td>' +
+      ? (function(){
+        if(p.matches == null) return '<td><span class="null-val">&#8212;</span></td>';
+        var recentSlice = (p._matches || []).slice(0,5);
+        var rows = recentSlice.map(function(m){
+          var d = m.finished_at ? new Date(m.finished_at).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}) : "?";
+          var cls = m.outcome === "win" ? "win" : m.outcome === "loss" ? "loss" : "draw";
+          var label = m.outcome === "win" ? "W" : m.outcome === "loss" ? "L" : "D";
+          return '<div class="match-tooltip-row"><span>' + d + '</span><span class="' + cls + '">' + label + '</span></div>';
+        }).join("");
+        var tip = recentSlice.length ? rows : '<div class="match-tooltip-row"><span style="color:#475569">Keine Daten</span></div>';
+        return '<td><div class="matches-wrap"><span class="matches-badge">' + p.matches + '</span>' +
+          '<div class="match-tooltip">' + tip + '</div></div></td>';
+      })() +
+        '<td><span class="hi-val">' + fmtVal(p, "leetifyRating") + '</span>' + trendHtml(p, "leetifyRating") + '</td>' +
         '<td>' + fmtVal(p, "winRate")       + '</td>' +
         '<td>' + fmtVal(p, "hsPercent")     + '</td>' +
         '<td>' + fmtVal(p, "accuracy")      + '</td>' +
@@ -451,11 +582,29 @@ function renderSorted() {
   try {
     var r = await fetch("/api/auth");
     if (!r.ok) { window.location.href = "/login"; return; }
+
+    // Restore UI state from localStorage
+    document.querySelectorAll(".time-btn").forEach(function(b){
+      b.classList.toggle("active", parseInt(b.dataset.days) === currentDays);
+    });
+    document.querySelectorAll(".minmatch-btn").forEach(function(b){
+      b.classList.toggle("active", parseInt(b.dataset.min) === currentMinMatch);
+    });
+    if (currentMode === "alltime") {
+      document.getElementById("modeMatch").classList.remove("active");
+      document.getElementById("modeAlltime").classList.add("active");
+    }
+
+    document.getElementById("autoRefreshToggle").addEventListener("change", function(){
+      if(this.checked) startAutoRefresh(); else { clearInterval(countdownInterval); }
+    });
+
     loadAll();
   } catch(e) {
     window.location.href = "/login";
   }
 })();
 </script>
+<div id="toast-container"></div>
 </body>
 </html>
